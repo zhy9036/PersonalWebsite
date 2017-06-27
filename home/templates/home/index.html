@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    {% load staticfiles %}
+    <link rel = 'stylesheet' href="{% static 'css/bootstrap.min.css' %}" type="text/css"/>
+    <link rel = 'script' href="{% static 'js/bootstrap.min.js' %}" />
+</head>
+<body>
+
+    <section class="container text-center">
+        <div class="login">
+
+            <h1><span id="formHeading">Login or </span><a id="formOption" onclick="formToggle()" href="#">Sign Up</a></h1>
+
+            <!--Login form-->
+            <form id="login_form" name="login_form" method="post" action="login()">
+
+                <p hidden class="well" id="login_validation_errors"></p>
+
+                <input id="login_user" type="text" name="login_user" value="" placeholder="Username or Email"></br>
+
+                <input id="login_password" type="password" name="login_password" value="" placeholder="Password"></br>
+
+                <label>
+                    <input type="checkbox" name="login_remember_checkbox" id="login_remember_checkbox"> Remember me on this computer
+                </label></br>
+
+                <input id="login_submit" type="submit" name="login_submit" value="Login">
+
+            </form>
+
+            <!--Signup form-->
+            <form hidden name="signup_form" id="signup_form" mehtod="post" action="login()">
+
+                <p hidden class="well" id="signup_validation_errors"></p>
+
+                <input id="signup_email" type="text" name="signup_email" value="" placeholder="Email"></br>
+
+                <input id="signup_username" type="text" name="signup_username" value="" placeholder="Username or Email"></br>
+
+                <input id="signup_password" type="password" name="signup_password" value="" placeholder="Password"></br>
+
+                <input id="signup_password_confirm" type="password" name="signup_password_confirm" value="" placeholder="Confirm Password"></br>
+
+                <label>
+                    <input type="checkbox" name="signup_terms_checkbox" id="signup_terms_checkbox"> I Agree to <a>terms and conditions</a>
+                </label></br>
+
+                <input  id="signup_submit" type="submit" name="signup_submit" value="Sign up">
+
+            </form>
+            <!--./signup form-->
+            <hr>
+
+            <p class="text-center">Forgot your password?<br> <a href="forgot.html">Click here to reset it</a>.</p>
+
+        </div>
+
+    </section>
+</body>
+</html>
