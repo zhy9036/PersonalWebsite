@@ -1,0 +1,32 @@
+
+<script>
+    function checkUsername() {
+      var username = $("#username").val();
+      //alert("username " + username);
+      if(username){
+          $.ajax({
+            url: '/login/',
+            data: {
+              'username': username
+            },
+            dataType: 'json',
+            success: function (data) {
+              if (data.is_taken) {
+                $("#status").css({'color':'light_green', 'font-size': '16px'});
+                $("#status").html("Unavailable, username already exists.");
+              }else{
+                $("#status").css({'color':'white', 'font-size': '16px'});
+                $("#status").html("Available");
+              }
+            }
+          });
+      }else{
+        $("#status").html("");
+      }
+
+    }
+    function onChange(){
+        $("login_user").onkeyup = function(){checkUsername()};
+    }
+    $(document).ready(onChange);
+</script>
