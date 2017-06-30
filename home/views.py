@@ -26,6 +26,7 @@ def signup(request):
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
+        print(username, password)
         user = User(username=username)
         user.set_password(password)
         user.save()
@@ -37,7 +38,7 @@ def signup(request):
         else:
             return HttpResponse("can't save to database")
     else:
-        return render(request, 'home/register.html', {"form_action": '/login/'})
+        return render(request, 'home/register.html', {"form_action": '/signup/'})
 
 
 
