@@ -1,0 +1,39 @@
+{% extends 'home/home_base.html' %}
+
+{% block content %}
+<form action= {{form_action}} method="POST" class="register-form">
+    <div class="row">
+               <div class="col-md-4 col-sm-4 col-lg-4">
+                  <label for="firstName">USERNAME</label>
+                   <label for="firstName" id="status"></label>
+                   <input id="username" name="username" class="form-control" type="text">
+               </div>
+          </div>
+          <div class="row">
+               <div class="col-md-4 col-sm-4 col-lg-4">
+                  <label for="password">PASSWORD</label>
+                   <input id="pass1" name="password" class="form-control" type="password">
+               </div>
+          </div>
+          <div class="row">
+               <div class="col-md-4 col-sm-4 col-lg-4">
+                  <label for="password">RETYPE PASSWORD</label>
+                   <label for="firstName" id="status1"></label>
+                   <input id="pass2" name="password1" class="form-control" type="password">
+               </div>
+          </div>
+          <hr>
+          <div class="row">
+               <div class="col-md-6 col-sm-6 col-xs-6 col-lg-6">
+               <button id="subBtn" class="btn btn-default regbutton">Register</button>
+
+              </div>
+            </div>
+</form>
+{% endblock %}
+
+{% block js %}
+    {% load staticfiles %}
+    <script  src="{% static 'js/register_use.js' %}" type = 'text/javascript'> </script>
+    <!-- {% include 'home/signup.html' %} -->
+{% endblock %}
