@@ -11,7 +11,7 @@ class UserLoginInfo(models.Model):
         return self.username
 
 class Projects(models.Model):
-    username = models.ForeignKey(User)
+    user = models.ForeignKey(User)
     projectName = models.CharField(max_length=20)
     projectUrl = models.CharField(primary_key=True, max_length=1000)
     projectToken = models.CharField(max_length=500)

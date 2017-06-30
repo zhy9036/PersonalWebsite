@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'db_demo',
     'home',
+    'mainpage',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -123,4 +124,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-
+# This tells Django where to look for static files that are not tied to
+# a particular app. In this case, we just told Django to also look
+# for static files in a folder called static in our root folder,
+# not just in our apps.
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)

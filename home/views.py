@@ -8,7 +8,7 @@ from django.views.decorators.debug import sensitive_post_parameters
 from mysite import settings
 from .models import UserLoginInfo
 
-# Create your views here.
+
 @sensitive_post_parameters('password')
 def index(request):
     return render(request, 'home/login.html', {"form_action": '/db/'})
@@ -41,9 +41,10 @@ def signup(request):
         return render(request, 'home/register.html', {"form_action": '/signup/'})
 
 
-
 def login_view(request):
-    next = request.GET.get('next', '/db/')
+    next = request.GET.get('next', '/panel/')
+    if request.user.is_authenticated():
+        return HttpResponseRedirect(next)
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
@@ -56,9 +57,11 @@ def login_view(request):
 
     return render(request, 'home/login.html', {"form_action": '/login/'})
 
+
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect(settings.LOGIN_URL)
+
 
 @login_required
 def foo(request):
