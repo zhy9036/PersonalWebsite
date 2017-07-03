@@ -13,7 +13,7 @@ class UserLoginInfo(models.Model):
 class Projects(models.Model):
     user = models.ForeignKey(User)
     projectName = models.CharField(max_length=20)
-    projectUrl = models.CharField(primary_key=True, max_length=1000)
+    projectUrl = models.CharField(max_length=1000)
     projectToken = models.CharField(max_length=500)
 
     def __str__(self):

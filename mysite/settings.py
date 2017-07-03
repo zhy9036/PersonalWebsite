@@ -123,7 +123,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
-
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # This tells Django where to look for static files that are not tied to
 # a particular app. In this case, we just told Django to also look
 # for static files in a folder called static in our root folder,

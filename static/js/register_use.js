@@ -45,6 +45,7 @@ function matchPassword(){
 $(document).ready(function() {
     $("#username").keyup(checkUsername);
     $("#pass2").keyup(matchPassword);
+    $("#pass1").keyup(matchPassword);
     $("#subBtn").click(function(event) {
         if(validatePass && validateName){
             $(this).submit();

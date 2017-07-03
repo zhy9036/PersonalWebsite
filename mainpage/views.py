@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.http.response import HttpResponse, Http404
 from django.shortcuts import render
 from home.models import Projects
 import json
@@ -13,11 +14,20 @@ def panel_home(request):
 
 
 @login_required
+def detail(request, project_id):
+    proj = Projects.objects.get(pk=project_id)
+    if request.user == proj.user:
+        return HttpResponse(project_id + " " + proj.user.username)
+    else:
+        return Http404("Project doesn't exist!")
+
+
+@login_required
 def update_project_info(request):
     current_user_id = request.user.id
-    projects = Projects.objects.filter(username=User.objects.get(id=current_user_id))
+    projects = Projects.objects.filter(user=request.user)
 
     projects_json_str = se.serialize('json', projects)
     projects_json = json.loads(projects_json_str)
 
-    return JsonResponse(projects_json, safe=False)
+    return JsonResponse(projects_json_str, safe=False)
