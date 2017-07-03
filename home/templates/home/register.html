@@ -6,7 +6,7 @@
                <div class="col-md-4 col-sm-4 col-lg-4">
                   <label for="firstName">USERNAME</label>
                    <label for="firstName" id="status"></label>
-                   <input id="username" name="username" class="form-control" type="text">
+                   <input data-ajax-target="{% url 'validate_username' %}", id="username" name="username" class="form-control" type="text">
                </div>
           </div>
           <div class="row">

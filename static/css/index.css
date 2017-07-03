@@ -1,18 +1,22 @@
 body, html{
     background-color:#34515E;
    font-family: 'Open Sans Condensed', sans-serif;
-    font-size: 18px;
+    font-size: 20px;
 
 }
+.form-control, .regbutton, .logbutton{
+    font-size: 20px;
+    font-weight: bold;
 
+}
 .register-form{
-    font-size: 16px;
+    font-size: 18px;
    left: 50%;
     top: 50%;
     position: absolute;
-    -webkit-transform: translate3d(-50%, 50%, 0);
-    -moz-transform: translate3d(-50%, 50%, 0);
-    transform: translate3d(-50%, 50%, 0);
+    -webkit-transform: translate3d(0%, 0%, 0);
+    -moz-transform: translate3d(0%, 0%, 0);
+    transform: translate3d(-50%, -50%, 0);
 }
 
 .regbutton{    

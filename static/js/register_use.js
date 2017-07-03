@@ -5,25 +5,25 @@ function checkUsername() {
     //alert("username " + username);
     if(username){
       $.ajax({
-        url: "{% url 'validate_username' %}",
+        url: $("#username").attr("data-ajax-target"),
         data: {
           'username': username
         },
         dataType: 'json',
         success: function (data) {
           if (data.is_taken) {
-            $("#status").css({'color':'light_green', 'font-size': '16px'});
+            $("#status").css({'color':'tomato', 'font-size': '16px'});
             $("#status").html("Unavailable, username already exists.");
             validateName = false;
           }else{
-            $("#status").css({'color':'white', 'font-size': '16px'});
+            $("#status").css({'color':'yellowgreen', 'font-size': '16px'});
             $("#status").html("Available");
             validateName = true;
           }
         }
       });
     }else{
-    $("#status").html("");
+        $("#status").html("");
     }
 
 }
@@ -32,7 +32,7 @@ function matchPassword(){
     var pass1 = $("#pass1").val();
     var pass2 = $("#pass2").val();
     if(pass1 != pass2){
-        $("#status1").css({'color':'red', 'font-size': '20px'});
+        $("#status1").css({'color':'tomato', 'font-size': '20px'});
         $("#status1").html("Password doesn't match.");
         validatePass = false
     }else{
