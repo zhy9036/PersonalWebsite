@@ -5,7 +5,7 @@ function checkUsername() {
     //alert("username " + username);
     if(username){
       $.ajax({
-        url: '/validate_username/',
+        url: "{% url 'validate_username' %}",
         data: {
           'username': username
         },

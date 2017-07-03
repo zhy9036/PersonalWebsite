@@ -7,11 +7,12 @@ from django.contrib.auth.models import User
 from django.views.decorators.debug import sensitive_post_parameters
 from mysite import settings
 from .models import UserLoginInfo
+from django.core.urlresolvers import reverse
 
 
 @sensitive_post_parameters('password')
 def index(request):
-    return render(request, 'home/login.html', {"form_action": '/db/'})
+    return render(request, 'home/login.html', {"form_action": reverse('login')})
 
 
 def validate(request):
@@ -38,24 +39,28 @@ def signup(request):
         else:
             return HttpResponse("can't save to database")
     else:
-        return render(request, 'home/register.html', {"form_action": '/signup/'})
+        return render(request, 'home/register.html', {"form_action": reverse('signup')})
 
 
 def login_view(request):
-    next = request.GET.get('next', '/panel/')
+
+    next = request.GET.get('next', reverse('panel_home'))
+
     if request.user.is_authenticated():
         return HttpResponseRedirect(next)
     if request.method == 'POST':
+
         username = request.POST['username']
         password = request.POST['password']
         user = authenticate(username=username, password=password)
         if user:
             login(request, user)
+            print("******************** " + next)
             return HttpResponseRedirect(next)
         else:
             return HttpResponse('<h1> WRONG </h1>')
 
-    return render(request, 'home/login.html', {"form_action": '/login/'})
+    return render(request, 'home/login.html', {"next": next})
 
 
 def logout_view(request):
@@ -65,5 +70,5 @@ def logout_view(request):
 
 @login_required
 def foo(request):
-    return HttpResponse('<a href="/logout/"> Log out </a>')
+    return HttpResponse("<a href= '%s' > Log out </a>" % reverse('logout'))
 

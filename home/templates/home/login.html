@@ -1,7 +1,7 @@
 {% extends 'home/home_base.html' %}
 
 {% block content %}
-<form action= {{form_action}} method="POST" class="register-form">
+<form action= "{% url 'login' %}?next={{next}}" method="POST" class="register-form">
     <div class="row">
        <div class="col-md-4 col-sm-4 col-lg-4">
           <label for="username">USERNAME</label>
@@ -19,14 +19,14 @@
           <hr>
     <div class="row">
         <div class="col-md-6 col-sm-6 col-xs-6 col-lg-6">
-            <button class="btn btn-default logbutton" formaction="\login\">Log in</button>
+            <button class="btn btn-default logbutton" formaction="{% url 'login' %}?next={{next}}">Log in</button>
         </div>
 
 
     </div>
     <br/>
     <div class="row">
-        <label>If you don't have a account yet, please </label><a class = "btn btn-default glyphicon glyphicon-hand-up" href="/signup/"> REGISTER</a>
+        <label>If you don't have a account yet, please </label><a class = "btn btn-default glyphicon glyphicon-hand-up" href={% url 'signup' %}> REGISTER</a>
     </div>
 
 </form>
