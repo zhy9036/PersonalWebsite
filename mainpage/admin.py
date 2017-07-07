@@ -1,3 +1,5 @@
 from django.contrib import admin
+from mainpage.models import Projects, Log
 
-# Register your models here.
+admin.site.register(Projects)
+admin.site.register(Log)

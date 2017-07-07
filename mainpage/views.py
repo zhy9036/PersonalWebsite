@@ -1,8 +1,9 @@
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
 from django.http.response import HttpResponse, Http404
 from django.shortcuts import render
-from home.models import Projects
+from .models import Projects
 import json
 from django.contrib.auth.models import User
 from django.core import serializers as se
@@ -15,11 +16,14 @@ def panel_home(request):
 
 @login_required
 def detail(request, project_id):
-    proj = Projects.objects.get(pk=project_id)
-    if request.user == proj.user:
-        return HttpResponse(project_id + " " + proj.user.username)
-    else:
-        return Http404("Project doesn't exist!")
+    try:
+        proj = Projects.objects.get(pk=project_id)
+        if request.user == proj.user:
+            return HttpResponse(project_id + " " + proj.user.username)
+        else:
+            raise Http404("Project doesn't exist!")
+    except ObjectDoesNotExist:
+        raise Http404("Project doesn't exist!")
 
 
 @login_required

@@ -3,21 +3,14 @@ from django.contrib.auth.models import User
 
 
 # Create your models here.
-class UserLoginInfo(models.Model):
-    username = models.CharField(primary_key=True, max_length=20)
-    password = models.CharField(max_length=20)
-
-    def __str__(self):
-        return self.username
-
-class Projects(models.Model):
+class Profile(models.Model):
     user = models.ForeignKey(User)
-    projectName = models.CharField(max_length=20)
-    projectUrl = models.CharField(max_length=1000)
-    projectToken = models.CharField(max_length=500)
+    screenName = models.CharField(max_length=500)
+    accessToken = models.CharField(max_length=1000)
+    refreshToken = models.CharField(max_length = 1000)
 
     def __str__(self):
-        return self.projectName
+        return self.screenName
 
-class UserPerf(models.Model):
-    username = models.ForeignKey(User)
+
+

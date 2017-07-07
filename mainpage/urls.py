@@ -3,7 +3,6 @@ from django.conf.urls import url, include
 from django.views.generic import RedirectView
 from django.contrib.auth.views import logout
 from django.views.generic.detail import DetailView
-from home.models import Projects
 from . import views
 
 
