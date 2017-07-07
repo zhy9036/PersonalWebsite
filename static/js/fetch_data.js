@@ -1,7 +1,32 @@
 $(document).ready(function() {
-    fetch();
-    setInterval(fetch, 60*1000);
+    var url = window.location.href;
+    if(url == 'http://127.0.0.1:8000/panel/'){
+        fetch();
+        setInterval(fetch, 10*60*1000);
+    }else{
+
+        //check_runner();
+    }
 });
+
+function check_runner() {
+    $.ajax({
+        url:$("#runner_status").attr("data-ajax-target"),
+        dataType: 'json',
+        success: function(data){
+            data1 = JSON.parse(data)
+
+            $('#project_list').html("");
+            data1.forEach(
+                function(obj){
+
+                }
+            );
+            //$('#project_list').html(data);
+        }
+    });
+}
+
 
 function fetch() {
     $('#loading_img').show();
@@ -28,12 +53,12 @@ function fetch() {
             data1.forEach(
                 function(obj){
                     var a_tag = $("<a>",
-                        {"class": "list-group-item list-group-item-info",
+                        {"class": "list-group-item",
                          "href" : obj.pk
                          });
                     a_tag.html("<Strong>" + obj.fields.projectName + "</Strong>")
                     var div = $("<div>", {"class":"text-right"})
-                    var sub_tag = $("<a>", {"href" : obj.fields.projectUrl, "target": "_blank",
+                    var sub_tag = $("<a>", {"href" : obj.fields.webUrl, "target": "_blank",
                                     "class": "text-right"})
                     sub_tag.html("Open in Gitlab");
                     div.append(sub_tag)

@@ -110,6 +110,7 @@ def login_view(request, nx=None):
 
 
 def logout_view(request):
+    gitlab_client.close()
     logout(request)
     return HttpResponseRedirect(settings.LOGIN_URL)
 
