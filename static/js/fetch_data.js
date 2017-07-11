@@ -4,22 +4,29 @@ $(document).ready(function() {
         fetch();
         setInterval(fetch, 10*60*1000);
     }else{
-
-        //check_runner();
+        check_runner();
     }
 });
 
 function check_runner() {
+    var url = window.location.href;
+
     $.ajax({
-        url:$("#runner_status").attr("data-ajax-target"),
+        type: "RUNNER",
+        url: url,
         dataType: 'json',
         success: function(data){
-            data1 = JSON.parse(data)
-
-            $('#project_list').html("");
-            data1.forEach(
+            $('#dropdown').html("");
+            data.forEach(
                 function(obj){
-
+                    var li = $("<li>");
+                    var a_tag = $("<a>",
+                        {
+                         "href" : 'reg_runner/' + obj.id
+                         });
+                    a_tag.html(obj.name);
+                    li.append(a_tag);
+                    $("#dropdown").append(li);
                 }
             );
             //$('#project_list').html(data);

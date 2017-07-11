@@ -67,15 +67,27 @@ def oauth2_authenticate(request):
     refresh_token = token['refresh_token']
     r = gitlab_client.get(api_base_url+'/user')
     r = json.loads(r.content)
+
+    print(r)
     screen_name = r['name']
     username = r['username']
     email = r['email']
+    gitlab_user_id = r['id']
     try:
         user = User.objects.get(username=username)
+        profile = Profile.objects.get(user=user)
+        profile.gitlabUserId = gitlab_user_id
+        profile.screenName = screen_name
+        profile.user = user
+        profile.accessToken = access_token
+        profile.refreshToken = refresh_token
+        profile.save()
+
     except User.DoesNotExist:
         # create_user(USERNAME, EMAIL, PASSWORD)
         user = User.objects.create_user(username, email, email)
         profile = Profile()
+        profile.gitlabUserId = gitlab_user_id
         profile.screenName = screen_name
         profile.user = user
         profile.accessToken = access_token

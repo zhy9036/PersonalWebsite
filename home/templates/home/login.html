@@ -1,8 +1,8 @@
 {% extends 'home/home_base.html' %}
 
 {% block content %}
-<div class="row">
-        <label>Log in with </label><a color = 'white', href={% url 'login_gitlab' %}> GitLab</a>
+<div class="aaa">
+        <label  >Log in with </label><a class="a_tag", href={% url 'login_gitlab' %}> GitLab</a>
 </div>
 <form action= "{% url 'login' %}?next={{next}}" method="POST" class="register-form">
     <div class="row">
@@ -29,7 +29,7 @@
     </div>
     <br/>
     <div class="row">
-        <label>If you don't have a account yet, please </label><a color = 'tomato', href={% url 'signup' %}> REGISTER</a>
+        <label>If you don't have a account yet, please </label><a class="a_tag", href={% url 'signup' %}> REGISTER</a>
     </div>
 
 </form>
