@@ -38,7 +38,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     'django.contrib.auth',
 
 ]
@@ -124,7 +123,7 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # This tells Django where to look for static files that are not tied to
 # a particular app. In this case, we just told Django to also look
 # for static files in a folder called static in our root folder,
@@ -132,3 +131,5 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
+
+AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend', )

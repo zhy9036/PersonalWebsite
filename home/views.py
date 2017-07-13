@@ -46,7 +46,7 @@ def signup(request):
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 CLIENT_ID = 'bdc5a7fe0a4c9b96046489709ec4a12fd5405a81fa0fa7b614cfababe286c513'
 CLIENT_SECRET = 'fe42d0cb36d3c3ae0dc93925a464d5aa72d1492790b3621e2471de70172f06b9'
-REDIRECT_URL = 'http://127.0.0.1:8000/callback'
+REDIRECT_URL = 'http://localhost:8000/callback'
 authorization_url = 'https://gitlab.chq.ei/oauth/authorize'
 token_url = 'https://gitlab.chq.ei/oauth/token'
 api_base_url = 'https://gitlab.chq.ei/api/v4'
@@ -55,17 +55,21 @@ gitlab_client = OAuth2Session(CLIENT_ID, redirect_uri=REDIRECT_URL, scope=scope)
 
 
 def gitlab_login(request):
+    if request.GET['next'] != '/panel/':
+        request.session['next'] = request.GET['next']
+
     a_url, state = gitlab_client.authorization_url(authorization_url)
     return HttpResponseRedirect(a_url)
 
 
 def oauth2_authenticate(request):
     exchange_code = request.GET['code']
+
     token = gitlab_client.fetch_token(token_url,
                         client_secret=CLIENT_SECRET, code=exchange_code, verify=False)
     access_token = token['access_token']
     refresh_token = token['refresh_token']
-    r = gitlab_client.get(api_base_url+'/user')
+    r = gitlab_client.get(api_base_url+'/user', verify=False)
     r = json.loads(r.content)
 
     print(r)
@@ -97,15 +101,19 @@ def oauth2_authenticate(request):
     user = authenticate(username=username, password=email)
     login(request, user)
 
-    return login_view(request)
+    return HttpResponseRedirect(reverse('login'))
 
 
 def login_view(request, nx=None):
 
-    next = request.GET.get('next', reverse('panel_home'))
+    nextgo = request.session['next'] if 'next' in request.session\
+        else request.GET.get('next', reverse('panel_home'))
 
+    print("******************** " + request.user.username)
+    print("******************** " + str(request.user.is_authenticated()))
     if request.user.is_authenticated():
-        return HttpResponseRedirect(next)
+
+        return HttpResponseRedirect(nextgo)
     if request.method == 'POST':
 
         username = request.POST['username']
@@ -113,12 +121,12 @@ def login_view(request, nx=None):
         user = authenticate(username=username, password=password)
         if user:
             login(request, user)
-            #print("******************** " + next)
-            return HttpResponseRedirect(next)
+            # print("******************** " + next)
+            return HttpResponseRedirect(nextgo)
         else:
             return HttpResponse('<h1> WRONG </h1>')
 
-    return render(request, 'home/login.html', {"next": next})
+    return render(request, 'home/login.html', {"next": nextgo})
 
 
 def logout_view(request):

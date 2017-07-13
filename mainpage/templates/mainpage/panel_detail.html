@@ -5,39 +5,15 @@
         <div class="row">
             <div class="col-lg-12">
                 <h1 class="page-header">
-                    {{projectName}}
+                    {{project_object.projectName}}
                 </h1>
             </div>
         </div>
     </div>
 
     <div class="row" id="runner_status" data-ajax-target="/check_runner/">
-        <div class="col-lg-10">
-            {% if runner_id %}
-            <div class="alert alert-info ">
-                <i class="fa fa-fw fa-check"></i>  Runner <strong> {{runner_name}} </strong> is <strong> {{status}} </strong>
-                <div class="text-right"><a href="{% url 'detail_remvoe_runner' projectId runner_id %}" type="button" class="btn btn-danger">Remove Runner</a></div>
-            </div>
-            {% else %}
-            <div class="alert alert-danger ">
-
-                <i class="fa fa-info-circle"></i>  Runner <strong> NOT ASSIGNED. </strong>
-                <div class="dropdown text-right">
-                  <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                    Avaliable Runner List
-                    <span class="caret"></span>
-                  </button>
-                  <ul id="dropdown" class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
-                    <li><a href="#">Action</a></li>
-                    <li><a href="#">Another action</a></li>
-                    <li><a href="#">Something else here</a></li>
-                    <li role="separator" class="divider"></li>
-                    <li><a href="#">Separated link</a></li>
-                  </ul>
-                </div>
-            </div>
-            {% endif %}
-        </div>
+        {% include 'mainpage/panel_detail_runnerDiv.html' %}
+        {% include 'mainpage/panel_detail_localRepoDiv.html' %}
     </div>
 {% endblock %}
 

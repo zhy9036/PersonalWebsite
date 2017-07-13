@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="aaa">
-        <label  >Log in with </label><a class="a_tag", href={% url 'login_gitlab' %}> GitLab</a>
+        <label  >Log in with </label><a class="a_tag", href= "{% url 'login_gitlab' %}?next={{next}}" > GitLab</a>
 </div>
 <form action= "{% url 'login' %}?next={{next}}" method="POST" class="register-form">
     <div class="row">
