@@ -21,6 +21,7 @@ def panel_home(request):
 
 @login_required
 def detail(request, project_id):
+    check_oauth(request)
     if request.method == 'RUNNER':
         r = gitlab_client.get('https://gitlab.chq.ei/api/v4/runners', verify=False)
         r = json.loads(r.content)
@@ -47,6 +48,7 @@ def detail(request, project_id):
                 if not op.exists(project_object.localRepoPath + '\.git'):
                     project_object.localRepoPath = ''
                     project_object.localRepoExist = False
+                    project_object.save()
 
             return render(request, 'mainpage/panel_detail.html', result_dict)
         else:
@@ -101,6 +103,46 @@ def detail_clone_repo(request, project_id):
     project_object.localRepoPath = local_path
     project_object.save()
     return HttpResponseRedirect(reverse('panel_home') + project_id)
+
+
+@login_required
+def yml_process(request, project_id):
+    check_oauth(request)
+    import os, yaml, collections
+    if request.method == 'POST':
+        project_path = Projects.objects.get(projectId=project_id).localRepoPath
+        os.chdir(project_path)
+        tmp = json.loads(request.body)
+        print(tmp)
+        tmp = collections.OrderedDict(tmp)
+        content = collections.OrderedDict()
+        content['stages'] = []
+        for key in tmp:
+            if 'script' in tmp[key]:
+                content['stages'].append(key)
+                content[key] = collections.OrderedDict()
+                content[key]['stage'] = key
+                if 'script' in tmp[key]:
+                    content[key]['script'] = []
+                    for item in tmp[key]['script']:
+                        content[key]['script'].append(item[2:])
+
+
+
+        def setup_yaml():
+            """ https://stackoverflow.com/a/8661021 """
+            represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
+            yaml.add_representer(collections.OrderedDict, represent_dict_order)
+
+        setup_yaml()
+        with open('sample.yml', 'w') as yaml_file:
+            yaml.dump(content, yaml_file, default_flow_style=False)
+        print(content)
+        return JsonResponse('', safe=False)
+    else:
+        r = gitlab_client.post("https://gitlab.chq.ei/api/v4/projects/1210/pipeline?ref=master", verify=False)
+        print('hahahahaha', r.content)
+        return JsonResponse('', safe=False)
 
 
 @login_required

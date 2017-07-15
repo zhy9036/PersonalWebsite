@@ -16,6 +16,7 @@ urlpatterns = [
     url(r'^(?P<project_id>\d+)/reg_runner/(?P<runner_id>\d+)/$', views.detail_reg_runner, name='detail_reg_runner'),
     url(r'^(?P<project_id>\d+)/remove_runner/(?P<runner_id>\d+)/$', views.detail_remove_runner, name='detail_remvoe_runner'),
     url(r'^(?P<project_id>\d+)/clone_repo/$', views.detail_clone_repo, name='clone_repo'),
+    url(r'^(?P<project_id>\d+)/yml_process/$', views.yml_process, name='yml_post'),
     # url(r'^check_runner/$', views.detail, name='detail'),
     # url(r'^foo/$', views.foo, name='test_page'),
     # url(r'^validate_username/$', views.validate, name='validate_username'),

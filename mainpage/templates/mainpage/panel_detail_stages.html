@@ -1,0 +1,163 @@
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+{% load staticfiles %}
+ <link href="{% static 'css/terminal_textarea.css' %}" rel="stylesheet">
+
+<div class="col-lg-12">
+    <div class='col-xs-5' id="to-do">
+        <h3 class="page-header"> Stages </h3>
+        <form class="form-inline" style="padding-bottom: 20px">
+            <label> Testing Stage </label>
+            <div class="pull-right">
+                <input class="form-control " type="text" id ="input" placeholder ="Paste File path here">
+                <button class="btn btn-primary " id ="add">Add</button>
+            </div>
+        </form>
+        <form class="form-inline" style="padding-bottom: 20px">
+            <label> Test failure Stage </label>
+            <div class="pull-right">
+                <input class="form-control " type="text" id ="input1" placeholder ="Paste File path here">
+                <button class="btn btn-primary " id ="add1">Add</button>
+            </div>
+        </form>
+        <form class="form-inline">
+            <label> Deploy Stage </label>
+            <div class="pull-right">
+                <input class="form-control " type="text" id ="input2" placeholder ="Paste File path here">
+                <button class="btn btn-primary " id ="add2">Add</button>
+            </div>
+        </form>
+    </div>
+    <div class='col-xs-5'>
+        <div class="shell-wrap">
+           <!--<p class="shell-top-bar"><Strong>.gitlab-ci.yml Preview</Strong></p>-->
+          <ul class="shell-body">
+              <li><strong>test:</strong>
+                <ul id="list" class="shell-body">
+
+                </ul>
+              </li>
+            <li><strong>test_failure:</strong>
+                <ul id="list1" class="shell-body">
+                </ul>
+            </li>
+            <li><strong>deploy:</strong>
+                <ul id="list2" class="shell-body">
+                </ul>
+            </li>
+          </ul>
+        </div>
+
+    </div>
+</div>
+
+
+<div class="col-lg-10">
+     <h3 class="page-header"> </h3>
+    <div class="alert">
+        <i class="fa fa-fw fa-check"></i>  Runner <strong> {{runner_name}} </strong> is <strong> {{status}} </strong>
+        <div class="text-right">
+            <button id='run_job' data-toggle="modal" data-target="#myModal"
+                    type="button" class="btn btn-danger">Start the CI job!</button>
+        </div>
+
+        <div class="modal fade" id="myModal" role="dialog">
+        <div class="modal-dialog">
+
+          <!-- Modal content-->
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal">&times;</button>
+
+              <h4 class="modal-title">Running Job</h4>
+            </div>
+                <div class="modal-body">
+                  {% load static %}
+                  <span id="loading_img"><img src="{% static 'img/loading_small.gif' %}"> Running </span>
+                  <p>Some text in the modal.</p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function() {
+        // data
+        yml_data = {'test':{}, 'failure':{}, 'deploy':{}};
+        // button
+        $('#add').on('click', function(){add_to_list('#input', '#list')});
+        $('#add1').on('click', function(){add_to_list('#input1', '#list1')});
+        $('#add2').on('click', function(){add_to_list('#input2', '#list2')});
+
+        // list container
+
+        // click event for button
+
+
+
+        function add_to_list(input_id, list_id){
+            var listContainer = $(list_id);
+            event.preventDefault(); // stop default behaviour of submit button
+            // value of input
+            ary = $(input_id).val().split('\\');
+            inputValue = ary[ary.length-1];
+
+            // add new list item
+            if(inputValue.length > 0){
+                inputValue = inputValue.split('.py')
+                inputValue = "- python " + inputValue[0] + '.py';
+                if(input_id == "#input"){
+                    if(!('script' in yml_data['test'])){
+                        yml_data['test']['script'] = []
+                    }
+                    yml_data['test']['script'].push(inputValue);
+                }else if(input_id == "#input1"){
+                    if(!('script' in yml_data['failure'])){
+                        yml_data['failure']['script'] = []
+                    }
+                    yml_data['failure']['script'].push(inputValue);
+                }else{
+                    if(!('script' in yml_data['deploy'])){
+                        yml_data['deploy']['script'] = []
+                    }
+                    yml_data['deploy']['script'].push(inputValue);
+                }
+                // alert(JSON.stringify(yml_data));
+                listContainer.append('<li> ' + inputValue + '</li>');
+                // clear value input
+                $(input_id).val('');
+            }
+        }
+
+        function get_data(){
+            alert("haha");
+            $.ajax({
+                type: "GET",
+                url: 'yml_process/',
+                dataType: 'json',
+                success: function(data){
+                    alert(data);
+
+                }
+            });
+
+        }
+
+        $("#run_job").on('click', function(){
+            $.ajax({
+                type: "POST",
+                url: 'yml_process/',
+                data: JSON.stringify(yml_data),
+                dataType: 'json',
+                success: get_data,
+
+            });
+        });
+    });
+
+</script>

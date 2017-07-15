@@ -6,6 +6,7 @@ $(document).ready(function() {
         setInterval(fetch, 10*60*1000);
     }else{
         check_runner();
+
     }
 });
 
