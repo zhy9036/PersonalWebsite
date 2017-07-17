@@ -71,8 +71,6 @@ def oauth2_authenticate(request):
     refresh_token = token['refresh_token']
     r = gitlab_client.get(api_base_url+'/user', verify=False)
     r = json.loads(r.content)
-
-    print(r)
     screen_name = r['name']
     username = r['username']
     email = r['email']

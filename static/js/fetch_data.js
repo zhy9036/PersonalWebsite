@@ -19,18 +19,26 @@ function check_runner() {
         dataType: 'json',
         success: function(data){
             $('#dropdown').html("");
-            data.forEach(
-                function(obj){
-                    var li = $("<li>");
-                    var a_tag = $("<a>",
-                        {
-                         "href" : 'reg_runner/' + obj.id
-                         });
-                    a_tag.html(obj.name);
-                    li.append(a_tag);
-                    $("#dropdown").append(li);
-                }
-            );
+            if(data.length > 0){
+                $('#runner_list').show();
+                $('#register_runner').hide();
+                data.forEach(
+                    function(obj){
+                        var li = $("<li>");
+                        var a_tag = $("<a>",
+                            {
+                             "href" : 'reg_runner/' + obj.id
+                             });
+                        a_tag.html(obj.name);
+                        li.append(a_tag);
+                        $("#dropdown").append(li);
+                    }
+                );
+            }else{
+                $('#register_runner').show();
+                $('#runner_list').hide();
+
+            }
             //$('#project_list').html(data);
         }
     });

@@ -10,7 +10,17 @@
     <div class="alert alert-danger ">
 
         <i class="fa fa-info-circle"></i>  Runner <strong> NOT ASSIGNED. </strong>
-        <div class="dropdown text-right">
+        <form id="register_runner" style="display:none" method="post"
+              action="{% url 'detail_reg_runner' project_object.projectId 0 %}">
+            <div class="text-right">
+                <div class="input-group">
+                  <span class="input-group-addon" id="basic-addon3">Registration Token</span>
+                  <input name="reg_token" type="text" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-success">Register</button>
+            </div>
+        </form>
+        <div style="display:none" id="runner_list" class="dropdown text-right">
           <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
             Avaliable Runner List
             <span class="caret"></span>

@@ -73,20 +73,23 @@
             </div>
                 <div class="modal-body">
                   {% load static %}
-                  <span id="loading_img"><img src="{% static 'img/loading_small.gif' %}"> Running </span>
-                  <p>Some text in the modal.</p>
+                    <span style="text-align:center" id="loading_img"><img src="{% static 'img/loading_small.gif' %}">
+                        <h3 style="display:inline-block" id="job_status">preparing</h3></span>
+                  <h3 id="job_result"></h3>
                 </div>
                 <div class="modal-footer">
                   <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
               </div>
 
+            </div>
         </div>
     </div>
 </div>
 
 <script>
     $(function() {
+        var run_job_validator = false;
         // data
         yml_data = {'test':{}, 'failure':{}, 'deploy':{}};
         // button
@@ -116,16 +119,19 @@
                         yml_data['test']['script'] = []
                     }
                     yml_data['test']['script'].push(inputValue);
+                    run_job_validator = true;
                 }else if(input_id == "#input1"){
                     if(!('script' in yml_data['failure'])){
                         yml_data['failure']['script'] = []
                     }
                     yml_data['failure']['script'].push(inputValue);
+                    run_job_validator = true;
                 }else{
                     if(!('script' in yml_data['deploy'])){
                         yml_data['deploy']['script'] = []
                     }
                     yml_data['deploy']['script'].push(inputValue);
+                    run_job_validator = true;
                 }
                 // alert(JSON.stringify(yml_data));
                 listContainer.append('<li> ' + inputValue + '</li>');
@@ -135,29 +141,61 @@
         }
 
         function get_data(){
-            alert("haha");
-            $.ajax({
-                type: "GET",
-                url: 'yml_process/',
-                dataType: 'json',
-                success: function(data){
-                    alert(data);
 
+            var interval_id = setInterval(
+                function(){
+                    $.ajax({
+                        type: "GET",
+                        url: 'yml_process/',
+                        dataType: 'json',
+                        success: function(data){
+
+                            var json_verify = false;
+                            try{
+                                ('id' in data);
+                                json_verify = true;
+                            }catch(e){
+                                json_verify = false;
+                            }
+
+                            if(!json_verify){
+                                clearInterval(interval_id);
+                                $("#loading_img").hide();
+                                $("#job_result").html(data);
+                            }else{
+
+                                if(data['status'] == 'failed'){
+
+                                    clearInterval(interval_id);
+                                    $("#loading_img").hide();
+                                    $("#job_result").html(data['status'] + data['id']);
+                                }else{
+                                    $("#job_status").html(data['status']);
+                                }
+                            }
+                        }
+                    });
                 }
-            });
-
+            , 1000);
         }
 
         $("#run_job").on('click', function(){
-            $.ajax({
-                type: "POST",
-                url: 'yml_process/',
-                data: JSON.stringify(yml_data),
-                dataType: 'json',
-                success: get_data,
+            $("#loading_img").show();
+            $("#job_result").html('');
+            if(run_job_validator){
+                $(this).attr('data-toggle', 'modal');
+                $.ajax({
+                    type: "POST",
+                    url: 'yml_process/',
+                    data: JSON.stringify(yml_data),
+                    dataType: 'json',
+                    success: get_data,
 
-            });
+                });
+            }else{
+                $(this).attr('data-toggle', '');
+                alert("No job to run!");
+            }
         });
     });
-
 </script>

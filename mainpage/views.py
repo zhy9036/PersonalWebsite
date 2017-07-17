@@ -11,6 +11,7 @@ from home.views import gitlab_client
 import json
 from django.contrib.auth.models import User
 from django.core import serializers as se
+import os, subprocess
 
 
 @login_required
@@ -66,9 +67,17 @@ def detail_check_runner(request, project_id):
 
 @login_required
 def detail_reg_runner(request, project_id, runner_id):
-    form = {'runner_id': runner_id}
-    r = gitlab_client.post('https://gitlab.chq.ei/api/v4/projects/%s/runners' % project_id, form, verify=False)
-    r = json.loads(r.content)
+    if request.method == "POST":
+        token = bytes(request.POST['reg_token'], 'utf-8')
+        sys_path = os.getcwd()
+        os.chdir('C:/Users/chq-yangz/Desktop/gitlab-runner')
+        ps = subprocess.Popen('gitlab-runner register', shell=True, stdin=subprocess.PIPE)
+        ps.communicate(b'https://gitlab.chq.ei/ci \n %b \n aci_runner \n aci \n true \n shell \n'%token)
+        os.chdir(sys_path)
+    else:
+        form = {'runner_id': runner_id}
+        r = gitlab_client.post('https://gitlab.chq.ei/api/v4/projects/%s/runners' % project_id, form, verify=False)
+        r = json.loads(r.content)
     return HttpResponseRedirect(reverse('panel_home') + project_id)
 
 
@@ -82,7 +91,7 @@ def detail_remove_runner(request, project_id, runner_id):
 
 @login_required
 def detail_clone_repo(request, project_id):
-    import os, subprocess
+
     remote_url = request.POST['repo_type'].split()[1]
     local_path = request.POST['local_path']
     os.chdir(local_path)
@@ -109,6 +118,7 @@ def detail_clone_repo(request, project_id):
 def yml_process(request, project_id):
     check_oauth(request)
     import os, yaml, collections
+    sys_path = os.getcwd()
     if request.method == 'POST':
         project_path = Projects.objects.get(projectId=project_id).localRepoPath
         os.chdir(project_path)
@@ -127,8 +137,6 @@ def yml_process(request, project_id):
                     for item in tmp[key]['script']:
                         content[key]['script'].append(item[2:])
 
-
-
         def setup_yaml():
             """ https://stackoverflow.com/a/8661021 """
             represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
@@ -140,17 +148,40 @@ def yml_process(request, project_id):
         print(content)
         return JsonResponse('', safe=False)
     else:
-        r = gitlab_client.post("https://gitlab.chq.ei/api/v4/projects/1210/pipeline?ref=master", verify=False)
-        print('hahahahaha', r.content)
-        return JsonResponse('', safe=False)
+        subprocess.check_call('git checkout aci')
+        subprocess.check_call('git add -A')
+        try:
+            r = None
+            if 'pipline_id' not in request.session:
+                subprocess.check_call('git commit -m \"[ci skip]\"')
+                subprocess.check_call('git push origin aci')
+                r = gitlab_client.post("https://gitlab.chq.ei/api/v4/projects/%s/"
+                                       "pipeline?ref=aci"%project_id, verify=False)
+                r = json.loads(r.content)
+                print('pipline id:', r['id'])
+                request.session['pipline_id'] = r['id']
+            else:
+                pipline_id = request.session['pipline_id']
+
+                r = gitlab_client.get("https://gitlab.chq.ei/api/v4/projects/%s/"
+                                       "pipelines/%s" % (project_id, pipline_id), verify=False)
+                r = json.loads(r.content)
+                print(r)
+                if r['status'] in ['success', 'failed']:
+                    request.session.pop('pipline_id', None)
+            os.chdir(sys_path)
+            return JsonResponse(r, safe=False)
+        except:
+            print('hahahahaha except')
+            return JsonResponse('No change detected', safe=False)
 
 
 @login_required
 def update_project_info(request):
     check_oauth(request)
     r = gitlab_client.get('https://gitlab.chq.ei/api/v4/projects', verify=False)
-
     r = json.loads(r.content)
+    print(r)
     for item in r:
         if item['namespace']['name'] == request.user.username:
             if not Projects.objects.filter(projectId=item['id']).exists():
