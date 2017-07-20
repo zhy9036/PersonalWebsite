@@ -46,7 +46,7 @@ def signup(request):
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 CLIENT_ID = 'bdc5a7fe0a4c9b96046489709ec4a12fd5405a81fa0fa7b614cfababe286c513'
 CLIENT_SECRET = 'fe42d0cb36d3c3ae0dc93925a464d5aa72d1492790b3621e2471de70172f06b9'
-REDIRECT_URL = 'http://localhost:8000/callback'
+REDIRECT_URL = 'http://10.1.182.146:8000/callback'
 authorization_url = 'https://gitlab.chq.ei/oauth/authorize'
 token_url = 'https://gitlab.chq.ei/oauth/token'
 api_base_url = 'https://gitlab.chq.ei/api/v4'

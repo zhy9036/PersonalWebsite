@@ -1,7 +1,8 @@
 $(document).ready(function() {
     var url = window.location.href;
     if(url == 'http://127.0.0.1:8000/panel/' ||
-    url == 'http://localhost:8000/panel/'){
+    url == 'http://localhost:8000/panel/'||
+    url == 'http://10.1.182.146:8000/panel/'){
         fetch();
         setInterval(fetch, 10*60*1000);
     }else{

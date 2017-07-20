@@ -25,7 +25,12 @@ SECRET_KEY = '9xl+0=3(mv700ofejl$(v$)37vcg0os6rcf26tfmggx1z5ejrd'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['10.1.182.146']
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+SYS_PATH = 'C:/Users/chq-yangz/Desktop/mysite'
+
 
 # Application definition
 
@@ -63,6 +68,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.media',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',

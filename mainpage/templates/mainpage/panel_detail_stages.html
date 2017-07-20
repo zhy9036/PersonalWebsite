@@ -3,29 +3,33 @@
 {% load staticfiles %}
  <link href="{% static 'css/terminal_textarea.css' %}" rel="stylesheet">
 
-<div class="col-lg-12">
+<div class="row col-lg-12">
     <div class='col-xs-5' id="to-do">
         <h3 class="page-header"> Stages </h3>
-        <form class="form-inline" style="padding-bottom: 20px">
+        <form id="form_upload" method="post" action="{% url 'upload' project_object.projectId %}"
+              enctype="multipart/form-data" class="form-inline">
+        <div class="form-inline" style="padding-bottom: 20px">
             <label> Testing Stage </label>
             <div class="pull-right">
-                <input class="form-control " type="text" id ="input" placeholder ="Paste File path here">
-                <button class="btn btn-primary " id ="add">Add</button>
+                <input name="my_file" multiple class="form-control" type="file" id ="input">
             </div>
-        </form>
-        <form class="form-inline" style="padding-bottom: 20px">
+        </div>
+        <div class="form-inline" style="padding-bottom: 20px">
             <label> Test failure Stage </label>
             <div class="pull-right">
-                <input class="form-control " type="text" id ="input1" placeholder ="Paste File path here">
-                <button class="btn btn-primary " id ="add1">Add</button>
+                <input multiple class="form-control " type="file" id ="input1">
             </div>
-        </form>
-        <form class="form-inline">
+        </div>
+        <div class="form-inline">
             <label> Deploy Stage </label>
             <div class="pull-right">
-                <input class="form-control " type="text" id ="input2" placeholder ="Paste File path here">
-                <button class="btn btn-primary " id ="add2">Add</button>
+                <input multiple class="form-control " type="file" id ="input2">
             </div>
+        </div>
+
+
+
+            <button style="display:none;" id="btn_upload" class="btn btn-success" type="submit">upload</button>
         </form>
     </div>
     <div class='col-xs-5'>
@@ -45,6 +49,16 @@
                 <ul id="list2" class="shell-body">
                 </ul>
             </li>
+            <li>
+                <div class="a_tag">
+               <a class="a_tag" style="font-size:14pt;" href="javascript:;" onclick="$('#btn_upload').click();">
+                    <strong style="float:right;"> Upload </strong></a>
+                </div>
+            </li>
+          </ul>
+          <ul class="shell-body">
+          </ul>
+            <ul class="shell-body">
           </ul>
         </div>
 
@@ -52,13 +66,12 @@
 </div>
 
 
-<div class="col-lg-10">
+<div class="row col-lg-10">
      <h3 class="page-header"> </h3>
     <div class="alert">
-        <i class="fa fa-fw fa-check"></i>  Runner <strong> {{runner_name}} </strong> is <strong> {{status}} </strong>
         <div class="text-right">
             <button id='run_job' data-toggle="modal" data-target="#myModal"
-                    type="button" class="btn btn-danger">Start the CI job!</button>
+                    type="button" class="btn btn-success">Start the CI job!</button>
         </div>
 
         <div class="modal fade" id="myModal" role="dialog">
@@ -93,55 +106,73 @@
         // data
         yml_data = {'test':{}, 'failure':{}, 'deploy':{}};
         // button
-        $('#add').on('click', function(){add_to_list('#input', '#list')});
-        $('#add1').on('click', function(){add_to_list('#input1', '#list1')});
-        $('#add2').on('click', function(){add_to_list('#input2', '#list2')});
+        $('#input').on('change', function(){add_to_list('#input','#list')});
+        $('#input1').on('change', function(){add_to_list('#input1', '#list1')});
+        $('#input2').on('change', function(){add_to_list('#input2', '#list2')});
 
         // list container
 
-        // click event for button
+        // override submit
+         $('#form_upload').submit(function(e){
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: new FormData($(this)[0]),
+                success: function(data){
+                },
+                cache: false,
+                contentType: false,
+                processData: false
+            });
+            e.preventDefault(e);
+         });
 
 
 
         function add_to_list(input_id, list_id){
             var listContainer = $(list_id);
-            event.preventDefault(); // stop default behaviour of submit button
+
             // value of input
-            ary = $(input_id).val().split('\\');
-            inputValue = ary[ary.length-1];
+            //var ary = $(input_id).val().split('\\');
+            var files = $(input_id).prop('files');
+            var fname_list = $.map(files, function(val){return val.name;});
+
 
             // add new list item
-            if(inputValue.length > 0){
-                inputValue = inputValue.split('.py')
-                inputValue = "- python " + inputValue[0] + '.py';
-                if(input_id == "#input"){
-                    if(!('script' in yml_data['test'])){
-                        yml_data['test']['script'] = []
+            if(fname_list.length > 0){
+                $.each(fname_list, function(i, fname){
+                    if(fname.includes("test_")){
+                        fname = "- pytest " + fname;
+                    }else{
+                        fname = "- python " + fname;
                     }
-                    yml_data['test']['script'].push(inputValue);
-                    run_job_validator = true;
-                }else if(input_id == "#input1"){
-                    if(!('script' in yml_data['failure'])){
-                        yml_data['failure']['script'] = []
+                    if($(input_id).attr('id')== "input"){
+                        if(!('script' in yml_data['test'])){
+                            yml_data['test']['script'] = []
+                        }
+                        yml_data['test']['script'].push(fname);
+                        run_job_validator = true;
+                    }else if($(input_id).attr('id') == "input1"){
+                        if(!('script' in yml_data['failure'])){
+                            yml_data['failure']['script'] = []
+                        }
+                        yml_data['failure']['script'].push(fname);
+                        run_job_validator = true;
+                    }else{
+                        if(!('script' in yml_data['deploy'])){
+                            yml_data['deploy']['script'] = []
+                        }
+                        yml_data['deploy']['script'].push(fname);
+                        run_job_validator = true;
                     }
-                    yml_data['failure']['script'].push(inputValue);
-                    run_job_validator = true;
-                }else{
-                    if(!('script' in yml_data['deploy'])){
-                        yml_data['deploy']['script'] = []
-                    }
-                    yml_data['deploy']['script'].push(inputValue);
-                    run_job_validator = true;
-                }
-                // alert(JSON.stringify(yml_data));
-                listContainer.append('<li> ' + inputValue + '</li>');
-                // clear value input
-                $(input_id).val('');
+                    // alert(JSON.stringify(yml_data));
+                    listContainer.append('<li> ' + fname + '</li>');
+                    // clear value input
+                });
             }
         }
 
         function get_data(){
-
             var interval_id = setInterval(
                 function(){
                     $.ajax({
@@ -164,7 +195,7 @@
                                 $("#job_result").html(data);
                             }else{
 
-                                if(data['status'] == 'failed'){
+                                if(data['status'] == 'failed' ||data['status'] == 'success'){
 
                                     clearInterval(interval_id);
                                     $("#loading_img").hide();
@@ -176,10 +207,11 @@
                         }
                     });
                 }
-            , 1000);
+            , 2000);
         }
 
         $("#run_job").on('click', function(){
+            $('#btn_upload').click();
             $("#loading_img").show();
             $("#job_result").html('');
             if(run_job_validator){
