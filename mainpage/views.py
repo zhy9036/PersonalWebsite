@@ -173,7 +173,7 @@ def yml_process(request, project_id):
             pass
         subprocess.check_call('git add -A')
         subprocess.check_call('git commit -m \"[ci skip]\"')
-        print("************ 175", os.getcwd())
+        print("************ 175", os.getcwd(), request.method)
         subprocess.check_call('git push origin aci')
         r = gitlab_client.post("https://gitlab.chq.ei/api/v4/projects/%s/"
                                "pipeline?ref=aci" % project_id, verify=False)
