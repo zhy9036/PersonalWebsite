@@ -164,7 +164,7 @@ def yml_process(request, project_id):
 
         with open('.gitlab-ci.yml', 'w') as yaml_file:
             yaml.dump(content, yaml_file, default_flow_style=False)
-
+        print("************ 175", os.getcwd())
         subprocess.check_call('git pull origin master')
 
         try:
