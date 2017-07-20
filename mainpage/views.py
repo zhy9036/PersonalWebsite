@@ -138,7 +138,9 @@ def yml_process(request, project_id):
     import os, yaml, collections
     project_path = Projects.objects.get(projectId=project_id).localRepoPath
     if request.method == 'POST':
+        print("************ 141", project_path)
         os.chdir(project_path)
+        print("************ 143", os.getcwd())
         subprocess.check_call('git checkout aci')
         tmp = json.loads(request.body)
         print(tmp)
