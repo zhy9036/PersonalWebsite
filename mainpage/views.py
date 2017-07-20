@@ -157,12 +157,11 @@ def yml_process(request, project_id):
                     for item in tmp[key]['script']:
                         content[key]['script'].append(item[2:])
 
-        def setup_yaml():
-            """ https://stackoverflow.com/a/8661021 """
-            represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
-            yaml.add_representer(collections.OrderedDict, represent_dict_order)
 
-        setup_yaml()
+        """ https://stackoverflow.com/a/8661021 """
+        represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
+        yaml.add_representer(collections.OrderedDict, represent_dict_order)
+
         with open('.gitlab-ci.yml', 'w') as yaml_file:
             yaml.dump(content, yaml_file, default_flow_style=False)
 
