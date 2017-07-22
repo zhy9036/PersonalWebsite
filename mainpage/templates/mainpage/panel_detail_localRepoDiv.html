@@ -3,16 +3,16 @@
     {% if project_object.localRepoExist %}
     <div class="alert alert-info ">
 
-        <i class="fa fa-fw fa-check"></i> <label for="basic-url">Local Repo Found</label>
+        <i class="fa fa-fw fa-check"></i> <label for="basic-url">Branch aci found</label>
         <div class="input-group">
-          <span class="input-group-addon" id="basic-addon3">Local URL</span>
+          <span class="input-group-addon" id="basic-addon3">Info</span>
           <input readonly value = {{project_object.localRepoPath}} type="text" class="form-control"  aria-describedby="basic-addon3">
         </div>
     </div>
     {% else %}
     <div class="alert alert-danger ">
         <i class="fa fa-fw fa-info-circle"></i>
-        <label for="basic-url">Local Repo Doesn't Exist. Please create a local Repo</label>
+        <label for="basic-url">Branch aci has not been created yet</label>
         <div class="input-group">
           <span class="input-group-addon">Specify Local URL</span>
           <input type="text" class="form-control" name="local_path" aria-describedby="basic-addon3">
@@ -27,7 +27,7 @@
             </div>
         <div class="text-right">
 
-            <button type="submit" class="btn btn-danger">Clone</button>
+            <button type="submit" class="btn btn-danger">Create aci branch</button>
         </div>
     </div>
     {% endif %}

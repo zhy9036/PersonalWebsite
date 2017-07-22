@@ -113,19 +113,32 @@
         // list container
 
         // override submit
+
          $('#form_upload').submit(function(e){
+            e.preventDefault();
             $.ajax({
                 type: 'POST',
                 url: $(this).attr('action'),
                 data: new FormData($(this)[0]),
                 success: function(data){
+                    alert('haha');
+                    $.ajax({
+                        type: "POST",
+                        url: 'yml_process/',
+                        data: JSON.stringify(yml_data),
+                        dataType: 'json',
+                        success: get_data,
+
+                    });
+
                 },
                 cache: false,
                 contentType: false,
                 processData: false
             });
-            e.preventDefault(e);
+
          });
+
 
 
 
@@ -199,6 +212,7 @@
 
                                     clearInterval(interval_id);
                                     $("#loading_img").hide();
+                                    $("#job_status").html('preparing');
                                     $("#job_result").html(data['status'] + data['id']);
                                 }else{
                                     $("#job_status").html(data['status']);
@@ -211,19 +225,12 @@
         }
 
         $("#run_job").on('click', function(){
-            $('#btn_upload').click();
             $("#loading_img").show();
             $("#job_result").html('');
             if(run_job_validator){
-                $(this).attr('data-toggle', 'modal');
-                $.ajax({
-                    type: "POST",
-                    url: 'yml_process/',
-                    data: JSON.stringify(yml_data),
-                    dataType: 'json',
-                    success: get_data,
 
-                });
+                $(this).attr('data-toggle', 'modal');
+                $('#btn_upload').click();
             }else{
                 $(this).attr('data-toggle', '');
                 alert("No job to run!");

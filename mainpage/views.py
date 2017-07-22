@@ -1,3 +1,6 @@
+import tempfile
+
+import sys
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import FileSystemStorage
@@ -32,11 +35,9 @@ def detail(request, project_id):
     try:
         project_object = Projects.objects.get(pk=project_id)
         if request.user == project_object.user:
-            # return HttpResponse(project_id + " " + proj.user.username)
             runner_dict = detail_check_runner(request, project_id)
             print(runner_dict)
             runner_count = len(runner_dict)
-            # print(runner_dict)
             result_dict = {
                 'upload_url': None if 'UPLOAD_URL' not in request.session else request.session['UPLOAD_URL'],
                 'runner_id': None if runner_count < 1 else runner_dict[0]['id'],
@@ -44,20 +45,16 @@ def detail(request, project_id):
                 'status': None if runner_count < 1 else ('Active' if runner_dict[0]['active'] else 'Inactive'),
                 'project_object': project_object,
             }
-            # check local repo
-            import os.path as op
-            os.chdir(sys_path)
+            # check aci branch
             if project_object.localRepoExist:
-                print("************ recheck", os.getcwd())
-                print("************ recheck", project_object.localRepoPath)
-                if not op.exists(project_object.localRepoPath + '\.git'):
+                api_str = 'https://gitlab.chq.ei/api/v4/projects/' \
+                            '{0}/repository/branches/aci'.format(project_id)
+                r = gitlab_client.get(api_str, verify=False)
+                r = json.loads(r.content)
+                if 'message' in r:
                     project_object.localRepoPath = ''
                     project_object.localRepoExist = False
                     project_object.save()
-                else:
-                    os.chdir(project_object.localRepoPath)
-                    subprocess.check_call('git checkout aci')
-                    os.chdir(sys_path)
 
             return render(request, 'mainpage/panel_detail.html', result_dict)
         else:
@@ -98,35 +95,16 @@ def detail_remove_runner(request, project_id, runner_id):
 
 @login_required
 def detail_clone_repo(request, project_id):
-    os.chdir(sys_path)
+    check_oauth(request)
+
     user_id = Profile.objects.get(user=request.user).gitlabUserId
-    remote_url = request.POST['repo_type'].split()[1]
-    local_path = './rsc/'+user_id+'/'+project_id
-    if not os.path.exists(local_path):
-        os.makedirs(local_path)
-    print(local_path)
-    os.chdir(local_path)
-    subprocess.check_call('git init')
-    subprocess.check_call('git remote add origin %s' % remote_url)
-    subprocess.check_call('git config http.sslVerify false')
-    try:
-        subprocess.check_call('git pull origin master')
-    except Exception:
-        pass
-    try:
-        subprocess.check_call('git checkout aci')
-        subprocess.check_call('git pull origin aci')
-    except:
-        subprocess.check_call('git checkout -b aci')
-        subprocess.check_call('git push origin aci')
-
-    # subprocess.check_call('git merge origin/aci')
-
-    os.chdir(sys_path)
-    print('!!!!!!!!!!!!!!!!!!!!! 98', project_id)
+    api_str = 'https://gitlab.chq.ei/api/v4/projects/' \
+              '{0}/repository/branches?branch=newbranch&ref=master'.format(project_id)
+    r = gitlab_client.post(api_str, verify=False)
+    r = json.loads(r.content)
     project_object = Projects.objects.get(projectId=project_id)
     project_object.localRepoExist = True
-    project_object.localRepoPath = local_path
+    project_object.localRepoPath = r['name']+': '+r['short_id']
     project_object.save()
 
     return HttpResponseRedirect(reverse('panel_home') + project_id)
@@ -134,14 +112,10 @@ def detail_clone_repo(request, project_id):
 
 @login_required
 def yml_process(request, project_id):
+    import os
     check_oauth(request)
     import os, yaml, collections
-    project_path = Projects.objects.get(projectId=project_id).localRepoPath
     if request.method == 'POST':
-        print("************ 141", project_path)
-        os.chdir(project_path)
-        print("************ 143", os.getcwd())
-        subprocess.check_call('git checkout aci')
         tmp = json.loads(request.body)
         print(tmp)
         tmp = collections.OrderedDict(tmp)
@@ -157,50 +131,52 @@ def yml_process(request, project_id):
                     for item in tmp[key]['script']:
                         content[key]['script'].append(item[2:])
 
-
         """ https://stackoverflow.com/a/8661021 """
         represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
         yaml.add_representer(collections.OrderedDict, represent_dict_order)
-
-        with open('.gitlab-ci.yml', 'w') as yaml_file:
+        with tempfile.TemporaryFile(mode='r+') as yaml_file:
             yaml.dump(content, yaml_file, default_flow_style=False)
-        print("************ 175", os.getcwd())
-        subprocess.check_call('git pull origin master')
+            yaml_file.seek(0)
+            fname = '.gitlab-ci.yml'
+            fcontent = yaml_file.read()
+            _upload_file(request, project_id, fname, fcontent)
 
-        try:
-            subprocess.check_call('git merge master -m \"[ci skip]\"')
-        except:
-            pass
-        subprocess.check_call('git add -A')
-        subprocess.check_call('git commit -m \"[ci skip]\"')
-        print("************ 175", os.getcwd(), request.method)
-        subprocess.check_call('git push origin aci')
+        # make merge request #
+        api_str = 'https://gitlab.chq.ei/api/v4/projects/{0}/merge_requests?' \
+                  'source_branch=master&target_branch=aci&title=sync_source_code'\
+                    .format(project_id)
+        r = gitlab_client.post(api_str, verify=False)
+        r = json.loads(r.content)
+        print("!8!81*1*18!8181818!*!*!*!8!8!*18!8!8!!*!*!*!*!*!*!*!*!",r)
+
+        # accept MR only when MR requested#
+        if 'message' not in r:
+            mr_id = r['id']
+            api_str = 'https://gitlab.chq.ei/api/v4/projects/' \
+                      '{0}/merge_requests/{1}/merge?merge_commit_message=[ci skip]'.format(project_id, mr_id)
+            r = gitlab_client.put(api_str, verify=False)
+            print(r.content)
+        else:
+            print('hahahahaha except')
+            return JsonResponse('No change detected', safe=False)
+
+        # create a pipline #
         r = gitlab_client.post("https://gitlab.chq.ei/api/v4/projects/%s/"
                                "pipeline?ref=aci" % project_id, verify=False)
         r = json.loads(r.content)
         print('pipline id:', r['id'])
         request.session['pipline_id'] = r['id']
 
-        os.chdir(sys_path)
         return JsonResponse('', safe=False)
     else:
-
         pipline_id = request.session['pipline_id']
-
         r = gitlab_client.get("https://gitlab.chq.ei/api/v4/projects/%s/"
                                "pipelines/%s" % (project_id, pipline_id), verify=False)
         r = json.loads(r.content)
         print(r)
         if r['status'] in ['success', 'failed']:
             request.session.pop('pipline_id', None)
-        os.chdir(sys_path)
         return JsonResponse(r, safe=False)
-        """
-        except:
-            os.chdir('C:/Users/chq-yangz/Desktop/mysite')
-            print('hahahahaha except')
-            return JsonResponse('No change detected', safe=False)
-        """
 
 
 @login_required
@@ -210,19 +186,9 @@ def detail_upload(request, project_id):
         my_file_list = request.FILES.getlist('my_file')
         for my_file in my_file_list:
             fname = my_file.name
-            destination_dir = './rsc/'+user_id+'/'+project_id
-            if not os.path.exists(destination_dir):
-                os.makedirs(destination_dir)
-            with open(destination_dir+'/'+fname, 'wb+') as destination_file:
-                for chunk in my_file.chunks():
-                    destination_file.write(chunk)
-        # fs = FileSystemStorage()
-        # filename = fs.save(my_file.name, my_file)
-        # upload_url = fs.url(my_file)
+            content = my_file.read().decode('utf-8')
+            _upload_file(request, project_id, fname, content)
 
-        # if upload_url:
-        #    request.session['UPLOAD_URL'] = upload_url
-    os.chdir(sys_path)
     return HttpResponseRedirect(
         reverse('detail', kwargs={'project_id': project_id}))
 
@@ -264,3 +230,20 @@ def check_oauth(request):
     p = Profile.objects.get(user=request.user)
     gitlab_client.token = {'access_token': p.accessToken,
                            'refresh_token': p.refreshToken}
+
+
+def _upload_file(request, project_id, fname, content):
+    check_oauth(request)
+    api_str = 'https://gitlab.chq.ei/api/v4/projects/{0}/repository/' \
+              'files?file_path={1}&branch_name=aci&content={2}' \
+              '&commit_message=[ci skip]'.format(project_id, fname, content)
+
+    r = gitlab_client.post(api_str, verify=False)
+    r = json.loads(r.content)
+    print("******************", fname, r, project_id)
+    if 'message' in r:
+        api_str = 'https://gitlab.chq.ei/api/v4/projects/{0}/repository/' \
+                  'files?file_path={1}&branch_name=aci&content={2}' \
+                  '&commit_message=[ci skip]'.format(project_id, fname, content)
+        r = gitlab_client.put(api_str)
+        print("*****************", fname, r.content, project_id)
