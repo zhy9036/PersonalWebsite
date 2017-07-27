@@ -1,19 +1,95 @@
 $(document).ready(function() {
-    var url = window.location.href;
-    if(url == 'http://127.0.0.1:8000/panel/' ||
-    url == 'http://localhost:8000/panel/'||
-    url == 'http://10.1.182.146:8000/panel/'){
-        fetch();
-        setInterval(fetch, 10*60*1000);
-    }else{
-        check_runner();
-
-    }
+    fetch();
+    setInterval(fetch, 10*60*1000);
+    last_job();
+    setInterval(last_job, 10*60*1000);
+    check_runner();
 });
+
+function last_job(){
+    $.ajax({
+        url: $("#last_job").attr("data-ajax-target"),
+        dataType: 'json',
+        success: function(data){
+            data = JSON.parse(data);
+            $("#last_job").html("");
+            if(data == ''){
+                var div_tag = $("<div>",{"class" : 'alert alert-success'});
+                var i_tag = $("<i>",{"class" : 'fa fa-info-circle'});
+                i_tag.html("<Strong style='font-family: sans-serif;'> No previous job yet! </Strong>");
+                div_tag.append(i_tag);
+                $("#last_job").append(div_tag);
+            }else{
+                var des = data[0].fields.description;
+                if (des.includes("success")){
+                    var div_tag = $("<div>",{"class" : 'alert alert-info'});
+                    var i_tag = $("<i>",{"class" : 'fa fa-check'});
+                    i_tag.html("<Strong style='font-family: sans-serif;'> Last " + des + "</Strong>");
+                    div_tag.append(i_tag);
+                    $("#last_job").append(div_tag);
+                }else{
+                    var div_tag = $("<div>",{"class" : 'alert alert-danger'});
+                    var i_tag = $("<i>",{"class" : 'fa fa-info-circle'});
+                    i_tag.html("<Strong style='font-family: sans-serif;'> Last " + des + "</Strong> ");
+                    var a_tag = $("<button>",{"id" : 'retry_a', "class": "btn btn-success",
+                                "data-toggle": "modal", 'data-target': "#myModal"});
+                    a_tag.html("Restart CI");
+                    div_tag.append(i_tag);
+                    div_tag.append(a_tag);
+                    $("#last_job").append(div_tag);
+                    $("#retry_a").on('click', function(){
+                        $.ajax({
+                            type: "POST",
+                            url: 'retry_job/',
+                            data: "",
+                            dataType: 'json',
+                            success: retry_pipeline,
+                        });
+                    });
+                }
+            }
+
+        }
+    });
+}
+
+function retry_pipeline(){
+    var interval_id = setInterval(
+        function(){
+            $.ajax({
+                type: "GET",
+                url: 'retry_job/',
+                dataType: 'json',
+                success: function(data){
+                    var json_verify = false;
+                    try{
+                        ('id' in data);
+                        json_verify = true;
+                    }catch(e){
+                        json_verify = false;
+                    }
+                    if(!json_verify){
+                        clearInterval(interval_id);
+                        $("#loading_img1").hide();
+                        $("#job_result").html(data);
+                    }else{
+                        if(data['status'] == 'failed' ||data['status'] == 'success'){
+                            clearInterval(interval_id);
+                            $("#loading_img1").hide();
+                            $("#job_status").html('preparing');
+                            $("#job_result").html(data['status'] + " " + data['id']);
+                        }else{
+                            $("#job_status").html(data['status']);
+                        }
+                    }
+                }
+            });
+        }
+    , 2000);
+}
 
 function check_runner() {
     var url = window.location.href;
-
     $.ajax({
         type: "RUNNER",
         url: url,
@@ -88,6 +164,59 @@ function fetch() {
         },
         complete: function() {
             $('#loading_img').hide();
+        }
+    }),
+
+    // Fetch log
+    $.ajax({
+        url:$("#log_list").attr("data-ajax-target"),
+        dataType: 'json',
+        success: function(data){
+            data = JSON.parse(data)
+            $('#log_list').html("");
+            data.forEach(
+                function(obj){
+                    var a_tag = $("<a>",
+                        {"class": "list-group-item",
+                         });
+
+                    var span = $("<span>", {"class" : "badge"});
+                    var before = new Date(obj.fields.timestamp).getTime()
+                    var now = new Date()
+                    var dif_sec = (now - before)/1000
+                    if(dif_sec < 60){
+                        span.html("less a minute")
+                    }else if(dif_sec < 3600){
+                         if(Math.round(dif_sec/60) == 1){
+                            span.html("one minute ago")
+                        }else{
+                            span.html(Math.round(dif_sec/60)+" mins ago")
+                        }
+                    }else if(dif_sec < 86400){
+                         if(Math.round(dif_sec/3600) == 1){
+                            span.html("one hour ago")
+                        }else{
+                            span.html(Math.round(dif_sec/3600)+" hours ago")
+                        }
+                    }else if(dif_sec < 432000){
+                        if(Math.round(dif_sec/86400) == 1){
+                            span.html("one day ago")
+                        }else{
+                            span.html(Math.round(dif_sec/86400)+" days ago")
+                        }
+                    }else{
+                        span.html(new Date(obj.fields.timestamp).getDate())
+                    }
+                    var i_tag = $("<i>", {"class" : "fa fa-fw fa-calendar"});
+                    a_tag.append(span);
+                    a_tag.append(i_tag);
+                    a_tag.append(obj.fields.description)
+                   $("#log_list").append(a_tag);
+                }
+            );
+        },
+        complete: function() {
+
         }
     });
 }

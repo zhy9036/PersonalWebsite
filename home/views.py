@@ -5,6 +5,8 @@ from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.views.decorators.debug import sensitive_post_parameters
+
+from mainpage.models import Log
 from mysite import settings
 from .models import Profile
 from django.core.urlresolvers import reverse
@@ -44,32 +46,32 @@ def signup(request):
         return render(request, 'home/register.html', {"form_action": reverse('signup')})
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-CLIENT_ID = 'bdc5a7fe0a4c9b96046489709ec4a12fd5405a81fa0fa7b614cfababe286c513'
-CLIENT_SECRET = 'fe42d0cb36d3c3ae0dc93925a464d5aa72d1492790b3621e2471de70172f06b9'
-REDIRECT_URL = 'http://10.1.182.146:8000/callback'
-authorization_url = 'https://gitlab.chq.ei/oauth/authorize'
-token_url = 'https://gitlab.chq.ei/oauth/token'
-api_base_url = 'https://gitlab.chq.ei/api/v4'
-scope = ['api', 'read_user']
-gitlab_client = OAuth2Session(CLIENT_ID, redirect_uri=REDIRECT_URL, scope=scope)
+CLIENT_ID = settings.CLIENT_ID
+CLIENT_SECRET = settings.CLIENT_SECRET
+REDIRECT_URL = 'http://chq-yangzh-lx.corp.expeditors.com/callback'
+AUTHORIZATION_URL = 'https://gitlab.chq.ei/oauth/authorize'
+TOKEN_URL = 'https://gitlab.chq.ei/oauth/token'
+API_BASE_URL = 'https://gitlab.chq.ei/api/v4'
+SCOPE = ['api', 'read_user']
+gitlab_client = OAuth2Session(CLIENT_ID, redirect_uri=REDIRECT_URL, scope=SCOPE)
 
 
 def gitlab_login(request):
     if request.GET['next'] != '/panel/':
         request.session['next'] = request.GET['next']
 
-    a_url, state = gitlab_client.authorization_url(authorization_url)
+    a_url, state = gitlab_client.authorization_url(AUTHORIZATION_URL)
     return HttpResponseRedirect(a_url)
 
 
 def oauth2_authenticate(request):
     exchange_code = request.GET['code']
 
-    token = gitlab_client.fetch_token(token_url,
-                        client_secret=CLIENT_SECRET, code=exchange_code, verify=False)
+    token = gitlab_client.fetch_token(TOKEN_URL,
+                                      client_secret=CLIENT_SECRET, code=exchange_code, verify=False)
     access_token = token['access_token']
     refresh_token = token['refresh_token']
-    r = gitlab_client.get(api_base_url+'/user', verify=False)
+    r = gitlab_client.get(API_BASE_URL + '/user', verify=False)
     r = json.loads(r.content)
     screen_name = r['name']
     username = r['username']
@@ -98,6 +100,11 @@ def oauth2_authenticate(request):
 
     user = authenticate(username=username, password=email)
     login(request, user)
+    log = Log()
+    log.user = user
+    log.logType = 'user'
+    log.description = 'logged in the system'
+    log.save()
 
     return HttpResponseRedirect(reverse('login'))
 
@@ -106,9 +113,6 @@ def login_view(request, nx=None):
 
     nextgo = request.session['next'] if 'next' in request.session\
         else request.GET.get('next', reverse('panel_home'))
-
-    print("******************** " + request.user.username)
-    print("******************** " + str(request.user.is_authenticated()))
     if request.user.is_authenticated():
 
         return HttpResponseRedirect(nextgo)
@@ -119,17 +123,21 @@ def login_view(request, nx=None):
         user = authenticate(username=username, password=password)
         if user:
             login(request, user)
-            # print("******************** " + next)
             return HttpResponseRedirect(nextgo)
         else:
             return HttpResponse('<h1> WRONG </h1>')
-
     return render(request, 'home/login.html', {"next": nextgo})
 
 
 def logout_view(request):
+    log = Log()
+    log.user = request.user
+    log.logType = 'user'
+    log.description = 'logged out the system'
+    log.save()
     gitlab_client.close()
     logout(request)
+
     return HttpResponseRedirect(settings.LOGIN_URL)
 
 

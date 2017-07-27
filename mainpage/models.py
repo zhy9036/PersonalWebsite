@@ -18,8 +18,13 @@ class Projects(models.Model):
 
 
 class Log(models.Model):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, blank=True)
+    project = models.ForeignKey(Projects, null=True, blank=True)
     description = models.CharField(max_length=1000, blank=True)
     projectId = models.CharField(max_length=100, blank=True)
-    action = models.CharField(max_length=20, blank=True)
+    pipelineId = models.CharField(max_length=100, blank=True)
+    logType = models.CharField(max_length=20, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.timestamp, self.description

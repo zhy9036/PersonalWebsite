@@ -1,0 +1,44 @@
+{% extends 'mainpage/panel_base.html' %}
+
+{% block content %}
+    <div class="container-fluid">
+
+        <!-- Page Heading -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">
+                    :-) <small>Automated Continuous Integration</small>
+                </h1>
+            </div>
+        </div>
+        <!-- /.row -->
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title"><i class="fa fa-clock-o fa-fw"></i> Logs</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div id="log_list" class="list-group" data-ajax-target="{% url 'panel_log_all' %}">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!-- /.row -->
+
+    </div>
+    <!-- /.container-fluid -->
+    <script>
+       $("#log").addClass("active");
+    </script>
+
+{% endblock %}
+
+{% block js %}
+    {% load staticfiles %}
+    <script src="{% static 'js/fetch_data.js' %}"></script>
+{% endblock %}

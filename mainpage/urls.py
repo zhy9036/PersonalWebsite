@@ -11,7 +11,13 @@ from django.contrib.auth.models import User
 urlpatterns = [
     #url(r'^$', views.panel_home, name='panel_home'),
     url(r'^$', views.panel_home, name='panel_home'),
+    url(r'^about/$', views.about_page, name='about_page'),
+    url(r'^log/$', views.panel_log, name='log_page'),
     url(r'^update_project/$', views.update_project_info, name='panel_project'),
+    url(r'^update_log/$', views.update_log, name='panel_log'),
+    url(r'^update_log_all/$', views.update_log_all, name='panel_log_all'),
+    url(r'^last_job/$', views.get_last_job, name='last_job'),
+    url(r'^retry_job/$', views.retry_last_job, name='retry_job'),
     url(r'^(?P<project_id>\d+)/$', views.detail, name='detail'),
     url(r'^(?P<project_id>\d+)/upload/$', views.detail_upload, name='upload'),
     url(r'^(?P<project_id>\d+)/reg_runner/(?P<runner_id>\d+)/$', views.detail_reg_runner, name='detail_reg_runner'),

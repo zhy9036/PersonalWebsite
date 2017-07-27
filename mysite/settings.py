@@ -27,10 +27,12 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['10.1.182.146', 'chq-yangzh-lx.corp.expeditors.com']
 
+# SELF DEFINED PARAMETERS
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 SYS_PATH = 'C:/Users/chq-yangz/Desktop/mysite'
-
+CLIENT_ID = 'bdc5a7fe0a4c9b96046489709ec4a12fd5405a81fa0fa7b614cfababe286c513'
+CLIENT_SECRET = 'fe42d0cb36d3c3ae0dc93925a464d5aa72d1492790b3621e2471de70172f06b9'
 
 # Application definition
 
