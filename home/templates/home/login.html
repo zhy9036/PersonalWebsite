@@ -1,36 +1,15 @@
 {% extends 'home/home_base.html' %}
 
 {% block content %}
-<div class="aaa">
-        <label  >Log in with </label><a class="a_tag", href= "{% url 'login_gitlab' %}?next={{next}}" > GitLab</a>
+<div class="login-page">
+  <div class="form">
+    <div class="login-form">
+      {% load staticfiles %}
+      <img src="{% static 'img/logo.gif' %}" />
+	  <h3 class="h3c">ACI Web Application</h3>
+      <button onclick="window.location.href='{% url 'login_gitlab' %}?next={{next}}'" %}?next={{next}}">login with GitLab</button>
+      <p class="message">Version Beta <a href="#">1.00.0.12.7</a></p>
+    </div>
+  </div>
 </div>
-<form action= "{% url 'login' %}?next={{next}}" method="POST" class="register-form">
-    <div class="row">
-       <div class="col-md-4 col-sm-4 col-lg-4">
-          <label for="username">USERNAME</label>
-           <label for="firstName" id="status"></label>
-           <input id="username" onkeyup="checkUsername();" name="username" class="form-control" type="text">
-       </div>
-    </div>
-
-    <div class="row">
-       <div class="col-md-4 col-sm-4 col-lg-4">
-          <label for="password">PASSWORD</label>
-           <input id="pass" name="password" class="form-control" type="password">
-       </div>
-    </div>
-          <hr>
-    <div class="row">
-        <div class="col-md-6 col-sm-6 col-xs-6 col-lg-6">
-            <button class="btn btn-default logbutton" formaction="{% url 'login' %}?next={{next}}">Log in</button>
-        </div>
-
-
-    </div>
-    <br/>
-    <div class="row">
-        <label>If you don't have a account yet, please </label><a class="a_tag", href={% url 'signup' %}> REGISTER</a>
-    </div>
-
-</form>
 {% endblock %}

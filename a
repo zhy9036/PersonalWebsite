@@ -1,6 +1,0 @@
-stages:
-- test
-test:
-  stage: test
-  script:
-  - python a.txt
