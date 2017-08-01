@@ -205,7 +205,7 @@ function fetch() {
                             span.html(Math.round(dif_sec/86400)+" days ago")
                         }
                     }else{
-                        span.html(new Date(obj.fields.timestamp).getDate())
+                        span.html(new Date(obj.fields.timestamp).toDateString())
                     }
                     var i_tag = $("<i>", {"class" : "fa fa-fw fa-calendar"});
                     a_tag.append(span);

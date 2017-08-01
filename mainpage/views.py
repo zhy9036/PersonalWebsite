@@ -14,6 +14,7 @@ from django.conf import settings
 from home.models import Profile
 from mainpage.models import Log
 from .models import Projects
+import base64
 from home.views import gitlab_client
 from django.core import serializers as se
 sys_path = settings.SYS_PATH
@@ -142,7 +143,7 @@ def yml_process(request, project_id):
                 yaml.dump(content, yaml_file, default_flow_style=False)
                 yaml_file.seek(0)
                 fname = '.gitlab-ci.yml'
-                fcontent = yaml_file.read()
+                fcontent = yaml_file.read().encode('utf-8')
                 _upload_file(request, project_id, fname, fcontent)
 
         # make merge request #
@@ -173,10 +174,17 @@ def yml_process(request, project_id):
         r = gitlab_client.post("https://gitlab.chq.ei/api/v4/projects/%s/"
                                "pipeline?ref=aci" % project_id, verify=False)
         r = json.loads(r.content)
+        print(r)
         make_log(request, 'pipeline',
                  'created a pipeline job({0})'.format(r['id']), project_id, r['id'])
         request.session['pipeline_id'] = r['id']
-        return JsonResponse('', safe=False)
+        return JsonResponse(r, safe=False)
+    elif request.method == 'YML_FILE':
+        r = gitlab_client.get("https://gitlab.chq.ei/api/v4/projects/%s/"
+                              "repository/files?file_path=.gitlab-ci.yml&ref=aci" % project_id, verify=False)
+        r = json.loads(r.content)
+        return JsonResponse(r, safe=False)
+        print("****************** YML FILE", r)
     else:
         pipeline_id = request.session['pipeline_id']
         r = gitlab_client.get("https://gitlab.chq.ei/api/v4/projects/%s/"
@@ -189,12 +197,35 @@ def yml_process(request, project_id):
 
 @login_required
 def detail_upload(request, project_id):
-    if request.method == 'POST' and 'my_file' in request.FILES:
-        my_file_list = request.FILES.getlist('my_file')
-        for my_file in my_file_list:
-            fname = my_file.name
-            content = my_file.read().decode('utf-8')
-            _upload_file(request, project_id, fname, content)
+    print(request.FILES)
+    print(request.POST['delete_file'])
+    if request.method == 'POST':
+        #print(request.FILES['files_delete'])
+        if 'test_files' in request.FILES:
+            print("******************11111111111111111111111111111111111111111111111111111111")
+            my_file_list = request.FILES.getlist('test_files')
+            print("hahahah", len(my_file_list))
+            for my_file in my_file_list:
+                if my_file.name not in request.POST['delete_file']:
+                    fname = my_file.name
+                    content = my_file.read()
+                    _upload_file(request, project_id, fname, content)
+
+        if 'test_failure_files' in request.FILES:
+            my_file_list = request.FILES.getlist('test_failure_files')
+            for my_file in my_file_list:
+                if my_file.name not in request.POST['delete_file']:
+                    fname = my_file.name
+                    content = my_file.read()
+                    _upload_file(request, project_id, fname, content)
+
+        if 'deploy_files' in request.FILES:
+            my_file_list = request.FILES.getlist('deploy_files')
+            for my_file in my_file_list:
+                if my_file.name not in request.POST['delete_file']:
+                    fname = my_file.name
+                    content = my_file.read()
+                    _upload_file(request, project_id, fname, content)
 
     return HttpResponseRedirect(
         reverse('detail', kwargs={'project_id': project_id}))
@@ -316,14 +347,22 @@ def check_oauth(request):
 
 def _upload_file(request, project_id, fname, content):
     check_oauth(request)
+    content = base64.b64encode(content)
+    form = {'content': content}
     api_str = 'https://gitlab.chq.ei/api/v4/projects/{0}/repository/' \
-              'files?file_path={1}&branch_name=aci&content={2}' \
-              '&commit_message=upload[ci skip]'.format(project_id, fname, content)
+              'files?file_path={1}&branch_name=aci' \
+              '&commit_message={2}&encoding=base64' \
+              .format(project_id, fname, 'upload[ci skip]')
 
-    r = gitlab_client.post(api_str, verify=False)
-    r = json.loads(r.content)
-    if 'message' in r:
+    r = gitlab_client.post(api_str, form, verify=False)
+    #r = json.loads(r.content)
+    print(api_str)
+    print("**************************************", r)
+    if '201' not in r:
+
         api_str = 'https://gitlab.chq.ei/api/v4/projects/{0}/repository/' \
-                  'files?file_path={1}&branch_name=aci&content={2}' \
-                  '&commit_message=update[ci skip]'.format(project_id, fname, content)
-        gitlab_client.put(api_str)
+                  'files?file_path={1}' \
+                  '&branch_name=aci&commit_message=update[ci skip]&encoding=base64' \
+                  .format(project_id, fname)
+        r = gitlab_client.put(api_str, form, verify=False)
+        print("***********************", r.content)

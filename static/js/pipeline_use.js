@@ -1,27 +1,34 @@
+
     $(function() {
         var run_job_validator = false;
         // data
-        yml_data = {'test':{}, 'failure':{}, 'deploy':{}};
+        var filename_list = [];
+        var file_count = 0;
+        var formData = new FormData();
+        var yml_data = {'test':{}, 'failure':{}, 'deploy':{}};
         // button
         $('#input').on('change', function(){add_to_list('#input','#list')});
         $('#input1').on('change', function(){add_to_list('#input1', '#list1')});
         $('#input2').on('change', function(){add_to_list('#input2', '#list2')});
-        yml_data = (run_job_validator) ? yml_data : "";
+
         // override submit
          $('#form_upload').submit(function(e){
+            //formData = new FormData($(this)[0]);
             e.preventDefault();
             $.ajax({
                 type: 'POST',
                 url: $(this).attr('action'),
-                data: new FormData($(this)[0]),
+                data: formData,//new FormData($(this)[0]),
                 success: function(data){
-                    //alert('haha');
                     $.ajax({
                         type: "POST",
                         url: 'yml_process/',
                         data: JSON.stringify(yml_data),
                         dataType: 'json',
-                        success: get_data,
+                        success: function(data){
+                            yml_data = {'test':{}, 'failure':{}, 'deploy':{}};
+                            get_data();
+                        },
                     });
                 },
                 cache: false,
@@ -31,6 +38,8 @@
 
          });
 
+
+
         function add_to_list(input_id, list_id){
             var listContainer = $(list_id);
 
@@ -38,7 +47,11 @@
             //var ary = $(input_id).val().split('\\');
             var files = $(input_id).prop('files');
             var fname_list = $.map(files, function(val){return val.name;});
-
+            var files_list = [];
+            $.each(files, function(i, file){
+                files_list.push(file);
+                file_count += 1;
+            });
 
             // add new list item
             if(fname_list.length > 0){
@@ -68,11 +81,31 @@
                         run_job_validator = true;
                     }
                     // alert(JSON.stringify(yml_data));
-                    listContainer.append('<li> ' + fname + '</li>');
-                    // clear value input
+                    function delete_file(obj, input_id){
+                        //let flist = $('#form_upload')[0][input_name].files;
+                        for(var i = 0; i < files_list.length; i++){
+
+                            if(obj.text().indexOf(files_list[i].name) > -1){
+                                filename_list.push(files_list[i].name);
+                            }
+                        }
+                        obj.remove();
+                    }
+                    //listContainer.append('<li> ' + fname +
+                    //'<a onClick="delete_file(input_id, list_id);"> delete </a></li>');
+                    var li = $("<li>");
+                    li.html(fname);
+                    var la = $("<a>", {"style": "padding:10px"});
+                    la.html("delete");
+                    la.bind('click', function(){delete_file(li, input_id);});
+                    li.append(la);
+                    listContainer.append(li);
+
                 });
             }
         }
+
+
 
         function get_data(){
             var interval_id = setInterval(
@@ -113,12 +146,28 @@
         $("#run_job").on('click', function(){
             $("#loading_img").show();
             $("#job_result").html('');
+            run_job_validator = (file_count == filename_list.length)? false : true;
+            formData = new FormData($("#form_upload")[0]);
+            formData.append("delete_file", filename_list);
             if(run_job_validator){
                 $(this).attr('data-toggle', 'modal');
+
                 $('#btn_upload').click();
             }else{
-                alert("Run with previous configurations");
-                $('#btn_upload').click();
+                yml_data = (run_job_validator) ? yml_data : "";
+                $.ajax({
+                    type: "YML_FILE",
+                    url: 'yml_process/',
+                    dataType: 'json',
+                    success: function(data){
+                        alert("Run with previous configurations:\n" + atob(data.content));
+                        $('#btn_upload').click();
+                    }
+                })
+
+
             }
         });
+
     });
+
