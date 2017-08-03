@@ -48,7 +48,6 @@ function last_job(){
                     });
                 }
             }
-
         }
     });
 }

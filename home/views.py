@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.views.decorators.debug import sensitive_post_parameters
 
-from mainpage.models import Log
+from mainpage.models import Log, Projects
 from mysite import settings
 from .models import Profile
 from django.core.urlresolvers import reverse
@@ -135,6 +135,7 @@ def logout_view(request):
     log.logType = 'user'
     log.description = 'logged out the system'
     log.save()
+    Projects.objects.filter(user=request.user).delete()
     gitlab_client.close()
     logout(request)
 

@@ -43,10 +43,12 @@ def detail(request, project_id):
         r = json.loads(r.content)
         return JsonResponse(r, safe=False)
     try:
-        project_object = Projects.objects.get(pk=project_id)
+        project_object = Projects.objects.get(projectId=project_id)
+        project_object.save()
         if request.user == project_object.user:
             runner_dict = detail_check_runner(request, project_id)
             runner_count = len(runner_dict)
+
             result_dict = {
                 'upload_url': None if 'UPLOAD_URL' not in request.session else request.session['UPLOAD_URL'],
                 'runner_id': None if runner_count < 1 else runner_dict[0]['id'],
@@ -54,16 +56,21 @@ def detail(request, project_id):
                 'status': None if runner_count < 1 else ('Active' if runner_dict[0]['active'] else 'Inactive'),
                 'project_object': project_object,
             }
+
             # check aci branch
-            if project_object.localRepoExist:
-                api_str = 'https://gitlab.chq.ei/api/v4/projects/' \
-                            '{0}/repository/branches/aci'.format(project_id)
-                r = gitlab_client.get(api_str, verify=False)
-                r = json.loads(r.content)
-                if 'message' in r:
-                    project_object.localRepoPath = ''
-                    project_object.localRepoExist = False
-                    project_object.save()
+
+            api_str = 'https://gitlab.chq.ei/api/v4/projects/' \
+                        '{0}/repository/branches/aci'.format(project_id)
+            r = gitlab_client.get(api_str, verify=False)
+            r = json.loads(r.content)
+            if 'message' in r:
+                project_object.localRepoPath = ''
+                project_object.localRepoExist = False
+
+            else:
+                project_object.localRepoPath = 'aci'
+                project_object.localRepoExist = True
+            project_object.save()
             return render(request, 'mainpage/panel_detail.html', result_dict)
         else:
             raise Http404("Project doesn't exist!")
@@ -75,6 +82,15 @@ def detail(request, project_id):
 def detail_check_runner(request, project_id):
     r = gitlab_client.get('https://gitlab.chq.ei/api/v4/projects/%s/runners' % project_id, verify=False)
     r = json.loads(r.content)
+    runner_count = len(r)
+    project_object = Projects.objects.get(projectId=project_id)
+    if runner_count > 0:
+        project_object.runnerExist = True
+        project_object.runnerName = r[0]['name']
+    else:
+        project_object.runnerExist = False
+        project_object.runnerName = ''
+    project_object.save()
     return r
 
 
@@ -90,14 +106,22 @@ def detail_reg_runner(request, project_id, runner_id):
     else:
         form = {'runner_id': runner_id}
         r = gitlab_client.post('https://gitlab.chq.ei/api/v4/projects/%s/runners' % project_id, form, verify=False)
+        print(r)
         make_log(request, 'runner', 'activated a runner({0})'.format(runner_id), project_id)
+    project_object = Projects.objects.get(projectId=project_id)
+    project_object.runnerExist = True
+    project_object.save()
     return HttpResponseRedirect(reverse('panel_home') + project_id)
 
 
 @login_required
 def detail_remove_runner(request, project_id, runner_id):
-    r = gitlab_client.delete('https://gitlab.chq.ei/api/v4/projects/%s/runners/%s' % (project_id, runner_id))
+    r = gitlab_client.delete('https://gitlab.chq.ei/api/v4/projects/%s/runners/%s' % (project_id, runner_id), verify=False)
     r = json.loads(r.content)
+    print(r)
+    project_object = Projects.objects.get(projectId=project_id)
+    project_object.runnerExist = False
+    project_object.save()
     make_log(request, 'runner', 'removed a runner({0})'.format(runner_id), project_id)
     return HttpResponseRedirect(reverse('panel_home') + project_id)
 
@@ -183,8 +207,20 @@ def yml_process(request, project_id):
         r = gitlab_client.get("https://gitlab.chq.ei/api/v4/projects/%s/"
                               "repository/files?file_path=.gitlab-ci.yml&ref=aci" % project_id, verify=False)
         r = json.loads(r.content)
-        return JsonResponse(r, safe=False)
+        if 'message' in r:
+            r['invalid'] = True
+            r['yml_missing'] = " [yml missing] "
+        detail_check_runner(request, project_id)
+        project_object = Projects.objects.get(projectId=project_id)
+        if not project_object.localRepoExist:
+            r['invalid'] = True
+            r['aci_missing'] = " [aci branch missing] "
+        if not project_object.runnerExist:
+            r['invalid'] = True
+            r['runner_missing'] = " [runner missing] "
         print("****************** YML FILE", r)
+        return JsonResponse(r, safe=False)
+
     else:
         pipeline_id = request.session['pipeline_id']
         r = gitlab_client.get("https://gitlab.chq.ei/api/v4/projects/%s/"
@@ -307,8 +343,8 @@ def update_project_info(request):
     r = json.loads(r.content)
     user_id = Profile.objects.get(user=request.user).gitlabUserId
     for item in r:
-        if str(item['creator_id']) == str(user_id):
-            if not Projects.objects.filter(projectId=item['id']).exists():
+        if item['permissions']['project_access']: #str(item['creator_id']) == str(user_id):
+            if not Projects.objects.filter(user=request.user, projectId=item['id']).exists():
                 p = Projects()
                 p.user = request.user
                 p.projectName = item['name']
@@ -332,7 +368,7 @@ def make_log(request, log_type, description, project_id=None, pipeline_id=None):
     log.logType = log_type
     log.description = description
     if project_id:
-        log.project = Projects.objects.get(projectId=project_id)
+        #log.project = Projects.objects.get(projectId=project_id)
         log.projectId = project_id
     if pipeline_id:
         log.pipelineId = pipeline_id

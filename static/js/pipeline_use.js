@@ -144,29 +144,36 @@
         }
 
         $("#run_job").on('click', function(){
-            $("#loading_img").show();
-            $("#job_result").html('');
-            run_job_validator = (file_count == filename_list.length)? false : true;
-            formData = new FormData($("#form_upload")[0]);
-            formData.append("delete_file", filename_list);
-            if(run_job_validator){
-                $(this).attr('data-toggle', 'modal');
+            $.ajax({
+                type: "YML_FILE",
+                url: 'yml_process/',
+                dataType: 'json',
+                success: function(data){
+                    $("#run_job").attr('data-toggle', '');
+                    if(data.invalid){
+                        var msg = data.yml_missing + data.aci_missing + data.runner_missing;
+                        $("#run_job").attr('data-toggle', 'modal');
+                        $("#job_result").html('Cannot run job: ' + msg);
 
-                $('#btn_upload').click();
-            }else{
-                yml_data = (run_job_validator) ? yml_data : "";
-                $.ajax({
-                    type: "YML_FILE",
-                    url: 'yml_process/',
-                    dataType: 'json',
-                    success: function(data){
-                        alert("Run with previous configurations:\n" + atob(data.content));
-                        $('#btn_upload').click();
+                    }else{
+                        $("#loading_img").show();
+                        $("#job_result").html('');
+                        run_job_validator = (file_count == filename_list.length)? false : true;
+                        formData = new FormData($("#form_upload")[0]);
+                        formData.append("delete_file", filename_list);
+                        if(run_job_validator){
+                            $("#run_job").attr('data-toggle', 'modal');
+                            $('#btn_upload').click();
+                        }else{
+                            alert("Run with previous configurations:\n" + atob(data.content));
+                            $("#run_job").attr('data-toggle', 'modal');
+                            $('#btn_upload').click();
+                            yml_data = (run_job_validator) ? yml_data : "";
+                        }
                     }
-                })
+                }
+            })
 
-
-            }
         });
 
     });
