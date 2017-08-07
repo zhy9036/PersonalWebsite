@@ -1,5 +1,33 @@
 
     $(function() {
+
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie != '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        var csrftoken = getCookie('csrftoken');
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
         var run_job_validator = false;
         // data
         var filename_list = [];
@@ -26,7 +54,7 @@
                         data: JSON.stringify(yml_data),
                         dataType: 'json',
                         success: function(data){
-                            yml_data = {'test':{}, 'failure':{}, 'deploy':{}};
+                            //yml_data = {'test':{}, 'failure':{}, 'deploy':{}};
                             get_data();
                         },
                     });
@@ -35,14 +63,12 @@
                 contentType: false,
                 processData: false
             });
-
          });
 
 
 
         function add_to_list(input_id, list_id){
             var listContainer = $(list_id);
-
             // value of input
             //var ary = $(input_id).val().split('\\');
             var files = $(input_id).prop('files');
@@ -56,26 +82,36 @@
             // add new list item
             if(fname_list.length > 0){
                 $.each(fname_list, function(i, fname){
-                    if(fname.includes("test_")){
+                    var delete_index = filename_list.indexOf(fname);
+                    if(delete_index > -1){
+                        filename_list.splice(delete_index, 1);
+                    }
+                    if(fname.indexOf("test_") > -1){
                         fname = "- pytest " + fname;
                     }else{
                         fname = "- python " + fname;
                     }
                     if($(input_id).attr('id')== "input"){
+
                         if(!('script' in yml_data['test'])){
-                            yml_data['test']['script'] = []
+                            yml_data['test']['script'] = [];
                         }
                         yml_data['test']['script'].push(fname);
                         run_job_validator = true;
+
                     }else if($(input_id).attr('id') == "input1"){
+
                         if(!('script' in yml_data['failure'])){
-                            yml_data['failure']['script'] = []
+                            yml_data['failure']['script'] = [];
+                            yml_data['failure']['when'] = 'on_failure';
                         }
                         yml_data['failure']['script'].push(fname);
                         run_job_validator = true;
+
                     }else{
+
                         if(!('script' in yml_data['deploy'])){
-                            yml_data['deploy']['script'] = []
+                            yml_data['deploy']['script'] = [];
                         }
                         yml_data['deploy']['script'].push(fname);
                         run_job_validator = true;
@@ -89,6 +125,30 @@
                                 filename_list.push(files_list[i].name);
                             }
                         }
+                        if($(input_id).attr('id')== "input"){
+                            var index = yml_data['test']['script'].indexOf(fname);
+                            yml_data['test']['script'].splice(index, 1);
+                            if(yml_data['test']['script'].length == 0){
+                                delete yml_data['test']['script'];
+                                delete yml_data['test']['when'];
+                            }
+
+                        }else if($(input_id).attr('id') == "input1"){
+                            var index = yml_data['failure']['script'].indexOf(fname);
+                            yml_data['failure']['script'].splice(index, 1);
+                            if(yml_data['failure']['script'].length == 0){
+                                delete yml_data['failure']['script'];
+                                delete yml_data['failure']['when'];
+                            }
+                        }else{
+                            var index = yml_data['deploy']['script'].indexOf(fname);
+                            yml_data['deploy']['script'].splice(index, 1);
+                            if(yml_data['deploy']['script'].length == 0){
+                                delete yml_data['deploy']['script'];
+                                delete yml_data['deploy']['when'];
+                            }
+
+                        }
                         obj.remove();
                     }
                     //listContainer.append('<li> ' + fname +
@@ -100,11 +160,9 @@
                     la.bind('click', function(){delete_file(li, input_id);});
                     li.append(la);
                     listContainer.append(li);
-
                 });
             }
         }
-
 
 
         function get_data(){
@@ -122,13 +180,12 @@
                             }catch(e){
                                 json_verify = false;
                             }
-
                             if(!json_verify){
                                 clearInterval(interval_id);
                                 $("#loading_img").hide();
                                 $("#job_result").html(data);
                             }else{
-                                if(data['status'] == 'failed' ||data['status'] == 'success'){
+                                if(data['status'] == 'failed' ||data['status'] == 'success' || data['status'] == 'skipped'){
                                     clearInterval(interval_id);
                                     $("#loading_img").hide();
                                     $("#job_status").html('preparing');
@@ -144,14 +201,27 @@
         }
 
         $("#run_job").on('click', function(){
+            $("#job_result").html('');
             $.ajax({
                 type: "YML_FILE",
                 url: 'yml_process/',
                 dataType: 'json',
                 success: function(data){
                     $("#run_job").attr('data-toggle', '');
-                    if(data.invalid){
-                        var msg = data.yml_missing + data.aci_missing + data.runner_missing;
+                    var emptyYml = jQuery.isEmptyObject(yml_data['test']) && jQuery.isEmptyObject(yml_data['failure'])
+                                    && jQuery.isEmptyObject(yml_data['deploy']);
+                    if((data.invalid &&  !('yml_missing' in data)) ||
+                        (data.invalid && data.yml_missing && emptyYml)){
+                        var msg = '';
+                        if ('yml_missing' in data){
+                            msg += data.yml_missing;
+                        }
+                        if ('aci_missing' in data){
+                            msg += data.aci_missing;
+                        }
+                        if ('runner_missing' in data){
+                            msg += data.runner_missing;
+                        }
                         $("#run_job").attr('data-toggle', 'modal');
                         $("#job_result").html('Cannot run job: ' + msg);
 
@@ -159,6 +229,7 @@
                         $("#loading_img").show();
                         $("#job_result").html('');
                         run_job_validator = (file_count == filename_list.length)? false : true;
+                        //alert(file_count + ' : ' + filename_list.length);
                         formData = new FormData($("#form_upload")[0]);
                         formData.append("delete_file", filename_list);
                         if(run_job_validator){
@@ -168,13 +239,11 @@
                             alert("Run with previous configurations:\n" + atob(data.content));
                             $("#run_job").attr('data-toggle', 'modal');
                             $('#btn_upload').click();
-                            yml_data = (run_job_validator) ? yml_data : "";
+
                         }
                     }
                 }
             })
-
         });
-
     });
 

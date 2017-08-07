@@ -13,7 +13,7 @@ from django.urls.base import reverse
 from django.conf import settings
 from home.models import Profile
 from mainpage.models import Log
-from .models import Projects
+from .models import Project
 import base64
 from home.views import gitlab_client
 from django.core import serializers as se
@@ -43,7 +43,7 @@ def detail(request, project_id):
         r = json.loads(r.content)
         return JsonResponse(r, safe=False)
     try:
-        project_object = Projects.objects.get(projectId=project_id)
+        project_object = Project.objects.get(projectId=project_id, user=request.user)
         project_object.save()
         if request.user == project_object.user:
             runner_dict = detail_check_runner(request, project_id)
@@ -83,7 +83,7 @@ def detail_check_runner(request, project_id):
     r = gitlab_client.get('https://gitlab.chq.ei/api/v4/projects/%s/runners' % project_id, verify=False)
     r = json.loads(r.content)
     runner_count = len(r)
-    project_object = Projects.objects.get(projectId=project_id)
+    project_object = Project.objects.get(projectId=project_id, user=request.user)
     if runner_count > 0:
         project_object.runnerExist = True
         project_object.runnerName = r[0]['name']
@@ -108,7 +108,7 @@ def detail_reg_runner(request, project_id, runner_id):
         r = gitlab_client.post('https://gitlab.chq.ei/api/v4/projects/%s/runners' % project_id, form, verify=False)
         print(r)
         make_log(request, 'runner', 'activated a runner({0})'.format(runner_id), project_id)
-    project_object = Projects.objects.get(projectId=project_id)
+    project_object = Project.objects.get(projectId=project_id, user=request.user)
     project_object.runnerExist = True
     project_object.save()
     return HttpResponseRedirect(reverse('panel_home') + project_id)
@@ -119,7 +119,11 @@ def detail_remove_runner(request, project_id, runner_id):
     r = gitlab_client.delete('https://gitlab.chq.ei/api/v4/projects/%s/runners/%s' % (project_id, runner_id), verify=False)
     r = json.loads(r.content)
     print(r)
-    project_object = Projects.objects.get(projectId=project_id)
+    if 'message' in r:
+        r = gitlab_client.delete('https://gitlab.chq.ei/api/v4/runners/%s' % runner_id,
+                                 verify=False)
+        r = json.loads(r.content)
+    project_object = Project.objects.get(projectId=project_id, user=request.user)
     project_object.runnerExist = False
     project_object.save()
     make_log(request, 'runner', 'removed a runner({0})'.format(runner_id), project_id)
@@ -130,12 +134,13 @@ def detail_remove_runner(request, project_id, runner_id):
 def detail_clone_repo(request, project_id):
     check_oauth(request)
     api_str = 'https://gitlab.chq.ei/api/v4/projects/' \
-              '{0}/repository/branches?branch=newbranch&ref=master'.format(project_id)
+              '{0}/repository/branches?branch_name=aci&ref=master'.format(project_id)
     r = gitlab_client.post(api_str, verify=False)
     r = json.loads(r.content)
-    project_object = Projects.objects.get(projectId=project_id)
+    print(r)
+    project_object = Project.objects.get(projectId=project_id, user=request.user)
     project_object.localRepoExist = True
-    project_object.localRepoPath = r['name']+': '+r['short_id']
+    project_object.localRepoPath = r['name']+': '+r['commit']['id']
     project_object.save()
     make_log(request, 'branch', 'created aci branch', project_id)
     return HttpResponseRedirect(reverse('panel_home') + project_id)
@@ -146,19 +151,28 @@ def yml_process(request, project_id):
     check_oauth(request)
     if request.method == 'POST':
         tmp = json.loads(request.body)
-        if tmp != '':
+        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",  bool(tmp))
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", tmp)
+        flag = False
+        for key in tmp:
+            if bool(tmp[key]):
+                flag = True
+        if flag:
             tmp = collections.OrderedDict(tmp)
             content = collections.OrderedDict()
             content['stages'] = []
             for key in tmp:
-                if 'script' in tmp[key]:
-                    content['stages'].append(key)
-                    content[key] = collections.OrderedDict()
-                    content[key]['stage'] = key
+                if key != 'empty':
                     if 'script' in tmp[key]:
-                        content[key]['script'] = []
-                        for item in tmp[key]['script']:
-                            content[key]['script'].append(item[2:])
+                        content['stages'].append(key)
+                        content[key] = collections.OrderedDict()
+                        content[key]['stage'] = key
+                        if 'script' in tmp[key]:
+                            content[key]['script'] = []
+                            for item in tmp[key]['script']:
+                                content[key]['script'].append(item[2:])
+                        if 'when' in tmp[key]:
+                            content[key]['when'] = tmp[key]['when']
 
             """ https://stackoverflow.com/a/8661021 """
             represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
@@ -198,7 +212,7 @@ def yml_process(request, project_id):
         r = gitlab_client.post("https://gitlab.chq.ei/api/v4/projects/%s/"
                                "pipeline?ref=aci" % project_id, verify=False)
         r = json.loads(r.content)
-        print(r)
+        print("************************", r)
         make_log(request, 'pipeline',
                  'created a pipeline job({0})'.format(r['id']), project_id, r['id'])
         request.session['pipeline_id'] = r['id']
@@ -211,7 +225,7 @@ def yml_process(request, project_id):
             r['invalid'] = True
             r['yml_missing'] = " [yml missing] "
         detail_check_runner(request, project_id)
-        project_object = Projects.objects.get(projectId=project_id)
+        project_object = Project.objects.get(projectId=project_id, user=request.user)
         if not project_object.localRepoExist:
             r['invalid'] = True
             r['aci_missing'] = " [aci branch missing] "
@@ -339,22 +353,26 @@ def retry_last_job(request):
 @login_required
 def update_project_info(request):
     check_oauth(request)
-    r = gitlab_client.get('https://gitlab.chq.ei/api/v4/projects', verify=False)
+    r = gitlab_client.get('https://gitlab.chq.ei/api/v4/projects?per_page=100', verify=False)
     r = json.loads(r.content)
     user_id = Profile.objects.get(user=request.user).gitlabUserId
     for item in r:
-        if item['permissions']['project_access']: #str(item['creator_id']) == str(user_id):
-            if not Projects.objects.filter(user=request.user, projectId=item['id']).exists():
-                p = Projects()
+        permissions = item['permissions']['project_access']
+        group = item['permissions']['group_access']
+        if (permissions and permissions['access_level'] >= 40) \
+                or (group and group['access_level'] >= 40) \
+                or str(item['creator_id']) == str(user_id):
+            if not Project.objects.filter(user=request.user, projectId=item['id']).exists():
+                p = Project()
                 p.user = request.user
-                p.projectName = item['name']
+                p.projectName = item['name_with_namespace']
                 p.projectId = item['id']
                 p.sshRepoUrl = item['ssh_url_to_repo']
                 p.httpRepoUrl = item['http_url_to_repo']
                 p.webUrl = item['web_url']
                 p.save()
 
-    projects = Projects.objects.filter(user=request.user)
+    projects = Project.objects.filter(user=request.user)
     projects_json_str = se.serialize('json', projects)
     return JsonResponse(projects_json_str, safe=False)
 

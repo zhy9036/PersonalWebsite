@@ -3,9 +3,9 @@ from django.contrib.auth.models import User
 
 
 # Create your models here.
-class Projects(models.Model):
+class Project(models.Model):
     user = models.ForeignKey(User)
-    projectId = models.CharField(max_length=1000, primary_key=True)
+    projectId = models.CharField(max_length=1000)
     projectName = models.CharField(max_length=1000, blank=True)
     webUrl = models.CharField(max_length=1000, blank=True)
     sshRepoUrl = models.CharField(max_length=1000, blank=True)
@@ -17,7 +17,7 @@ class Projects(models.Model):
     localRepoPath = models.CharField(max_length=1000, blank=True)
 
     def __str__(self):
-        return self.projectName
+        return self.user.username + ' ' + self.projectName
 
 
 class Log(models.Model):
@@ -29,4 +29,5 @@ class Log(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.timestamp, self.description
+        title = str(self.timestamp) + ' ' + self.description
+        return title

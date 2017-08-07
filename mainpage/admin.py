@@ -1,5 +1,5 @@
 from django.contrib import admin
-from mainpage.models import Projects, Log
+from mainpage.models import Project, Log
 
-admin.site.register(Projects)
+admin.site.register(Project)
 admin.site.register(Log)
