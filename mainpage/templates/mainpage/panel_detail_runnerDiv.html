@@ -13,6 +13,7 @@
         <i class="fa fa-info-circle"></i>  Runner <strong> NOT ASSIGNED. </strong>
         <form id="register_runner" style="display:none" method="post"
               action="{% url 'detail_reg_runner' project_object.projectId 0 %}">
+            {% csrf_token %}
             <div class="text-right">
                 <div class="input-group">
                   <span class="input-group-addon" id="basic-addon3">Registration Token</span>

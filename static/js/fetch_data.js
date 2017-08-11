@@ -31,10 +31,12 @@ $(document).ready(function() {
     fetch();
     setInterval(fetch, 10*60*1000);
     last_job();
-    setInterval(last_job, 10*60*1000);
+    //setInterval(last_job, 10*60*1000);
     check_runner();
 });
-
+$("#myModal").on('hidden.bs.modal', function(){
+    last_job();
+});
 function last_job(){
     $.ajax({
         url: $("#last_job").attr("data-ajax-target"),
@@ -50,7 +52,7 @@ function last_job(){
                 $("#last_job").append(div_tag);
             }else{
                 var des = data[0].fields.description;
-                if (des.includes("success")){
+                if (des.indexOf("success") > -1){
                     var div_tag = $("<div>",{"class" : 'alert alert-info'});
                     var i_tag = $("<i>",{"class" : 'fa fa-check'});
                     i_tag.html("<Strong style='font-family: sans-serif;'> Last " + des + "</Strong>");
@@ -61,7 +63,8 @@ function last_job(){
                     var i_tag = $("<i>",{"class" : 'fa fa-info-circle'});
                     i_tag.html("<Strong style='font-family: sans-serif;'> Last " + des + "</Strong> ");
                     var a_tag = $("<button>",{"id" : 'retry_a', "class": "btn btn-success",
-                                "data-toggle": "modal", 'data-target': "#myModal"});
+                                "data-toggle": "modal", 'data-target': "#myModal",
+                                "style" : "margin-left:25px"});
                     a_tag.html("Restart CI");
                     div_tag.append(i_tag);
                     div_tag.append(a_tag);
@@ -134,7 +137,7 @@ function check_runner() {
                             {
                              "href" : 'reg_runner/' + obj.id
                              });
-                        a_tag.html(obj.name);
+                        a_tag.html(obj.name + ' ' + obj.id);
                         li.append(a_tag);
                         $("#dropdown").append(li);
                     }

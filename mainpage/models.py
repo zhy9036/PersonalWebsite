@@ -31,3 +31,13 @@ class Log(models.Model):
     def __str__(self):
         title = str(self.timestamp) + ' ' + self.description
         return title
+
+
+class Member(models.Model):
+    name = models.CharField(max_length=150, blank=False)
+    jobTitle = models.CharField(max_length=150, default='World Destroyer II')
+    jobDescription = models.CharField(max_length=1000, default='What does this team member to? Keep it short! This is also a great spot for social links!')
+    avatar_uri = models.CharField(max_length=200, default='http://placehold.it/150x150')
+
+    def __str__(self):
+        return self.name

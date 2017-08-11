@@ -12,7 +12,7 @@ from django.shortcuts import render
 from django.urls.base import reverse
 from django.conf import settings
 from home.models import Profile
-from mainpage.models import Log
+from mainpage.models import Log, Member
 from .models import Project
 import base64
 from home.views import gitlab_client
@@ -32,7 +32,8 @@ def panel_log(request):
 
 @login_required
 def about_page(request):
-    return render(request, 'mainpage/panel_about.html')
+    members = Member.objects.all()
+    return render(request, 'mainpage/panel_about.html', {'members': members})
 
 
 @login_required
@@ -247,35 +248,16 @@ def yml_process(request, project_id):
 
 @login_required
 def detail_upload(request, project_id):
-    print(request.FILES)
-    print(request.POST['delete_file'])
+    print("Request Files: ", request.FILES)
     if request.method == 'POST':
-        #print(request.FILES['files_delete'])
-        if 'test_files' in request.FILES:
+        if 'aci_files' in request.FILES:
             print("******************11111111111111111111111111111111111111111111111111111111")
-            my_file_list = request.FILES.getlist('test_files')
+            my_file_list = request.FILES.getlist('aci_files')
             print("hahahah", len(my_file_list))
             for my_file in my_file_list:
-                if my_file.name not in request.POST['delete_file']:
-                    fname = my_file.name
-                    content = my_file.read()
-                    _upload_file(request, project_id, fname, content)
-
-        if 'test_failure_files' in request.FILES:
-            my_file_list = request.FILES.getlist('test_failure_files')
-            for my_file in my_file_list:
-                if my_file.name not in request.POST['delete_file']:
-                    fname = my_file.name
-                    content = my_file.read()
-                    _upload_file(request, project_id, fname, content)
-
-        if 'deploy_files' in request.FILES:
-            my_file_list = request.FILES.getlist('deploy_files')
-            for my_file in my_file_list:
-                if my_file.name not in request.POST['delete_file']:
-                    fname = my_file.name
-                    content = my_file.read()
-                    _upload_file(request, project_id, fname, content)
+                fname = my_file.name
+                content = my_file.read()
+                _upload_file(request, project_id, fname, content)
 
     return HttpResponseRedirect(
         reverse('detail', kwargs={'project_id': project_id}))

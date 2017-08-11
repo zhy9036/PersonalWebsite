@@ -30,11 +30,13 @@
         });
         var run_job_validator = false;
         // data
+        var files_list = [];
         var filename_list = [];
         var file_count = 0;
         var formData = new FormData();
         var yml_data = {'test':{}, 'failure':{}, 'deploy':{}};
         // button
+        $('#input').on('click', function(){$(this).val('')});
         $('#input').on('change', function(){add_to_list('#input','#list')});
         $('#input1').on('change', function(){add_to_list('#input1', '#list1')});
         $('#input2').on('change', function(){add_to_list('#input2', '#list2')});
@@ -48,6 +50,7 @@
                 url: $(this).attr('action'),
                 data: formData,//new FormData($(this)[0]),
                 success: function(data){
+                    //alert("Upload successed!");
                     $.ajax({
                         type: "POST",
                         url: 'yml_process/',
@@ -68,24 +71,27 @@
 
 
         function add_to_list(input_id, list_id){
+            //alert('triggered');
+
             var listContainer = $(list_id);
             // value of input
             //var ary = $(input_id).val().split('\\');
             var files = $(input_id).prop('files');
             var fname_list = $.map(files, function(val){return val.name;});
-            var files_list = [];
+
             $.each(files, function(i, file){
                 files_list.push(file);
                 file_count += 1;
             });
-
+            $(input_id).val('')
             // add new list item
-            if(fname_list.length > 0){
+            //if(fname_list.length > 0){
+                //alert(fname_list.length);
                 $.each(fname_list, function(i, fname){
-                    var delete_index = filename_list.indexOf(fname);
-                    if(delete_index > -1){
-                        filename_list.splice(delete_index, 1);
-                    }
+                    //var delete_index = filename_list.indexOf(fname);
+                    //if(delete_index > -1){
+                    //    filename_list.splice(delete_index, 1);
+                    //}
                     if(fname.indexOf("test_") > -1){
                         fname = "- pytest " + fname;
                     }else{
@@ -119,12 +125,14 @@
                     // alert(JSON.stringify(yml_data));
                     function delete_file(obj, input_id){
                         //let flist = $('#form_upload')[0][input_name].files;
+                        var ii = 0;
                         for(var i = 0; i < files_list.length; i++){
-
                             if(obj.text().indexOf(files_list[i].name) > -1){
-                                filename_list.push(files_list[i].name);
+                                ii = i;
+                                //filename_list.push(files_list[i].name);
                             }
                         }
+                        files_list.splice(ii, 1);
                         if($(input_id).attr('id')== "input"){
                             var index = yml_data['test']['script'].indexOf(fname);
                             yml_data['test']['script'].splice(index, 1);
@@ -160,8 +168,9 @@
                     la.bind('click', function(){delete_file(li, input_id);});
                     li.append(la);
                     listContainer.append(li);
+
                 });
-            }
+            //}
         }
 
 
@@ -228,10 +237,15 @@
                     }else{
                         $("#loading_img").show();
                         $("#job_result").html('');
-                        run_job_validator = (file_count == filename_list.length)? false : true;
+                        run_job_validator = (files_list.length==0)? false : true;
                         //alert(file_count + ' : ' + filename_list.length);
-                        formData = new FormData($("#form_upload")[0]);
-                        formData.append("delete_file", filename_list);
+                        formData = new FormData();
+                        for (var i = 0; i < files_list.length; i++){
+                            formData.append('aci_files', files_list[i], files_list[i].name);
+                        }
+
+                        //formData.append('test_files', files_list);
+                        //formData.append("delete_file", filename_list);
                         if(run_job_validator){
                             $("#run_job").attr('data-toggle', 'modal');
                             $('#btn_upload').click();
